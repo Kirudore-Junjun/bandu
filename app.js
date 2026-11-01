@@ -202,6 +202,7 @@ async function fillReader(cid){
   if(!book){const buf=await idbGet('epub:'+c.bookId);if(buf){try{book=S.epubs[c.bookId]=await openEpub(buf)}catch(e){book=null}}}
   if(!document.getElementById('reader'))return;
   if(!book){box.innerHTML=`<div class="loadbox"><b>选择这本书的 epub 文件</b><p>文件只在这台设备上打开和保存，不会上传。</p><p>选过一次后，这台设备会记住它。</p>${filePicker(c,cid,'选择 epub 文件',true)}</div>`;return}
+  if(c.epubStart&&c.epubHref&&await showSpan(book,c,box))return;
   if(c.epubHref){const h=(book.spine||[]).find(x=>x.endsWith(c.epubHref));if(h){await showHref(book,-1,box,[h]);return}}
   const want=(c.epubLabel||c.titleEn||'').toLowerCase();
   const hit=book.toc.find(t=>t.label.toLowerCase()===want)||book.toc.find(t=>want&&t.label.toLowerCase().includes(want));
@@ -215,6 +216,35 @@ function chapterRange(book,k){
   let b=sp.length;
   for(let j=k+1;j<book.toc.length;j++){const u=book.toc[j];if((u.depth||0)>(t.depth||0))continue;const x=sp.indexOf(u.href);if(x>a){b=x;break}}
   return sp.slice(a,Math.min(b,a+60));
+}
+/* chapters that live mid-file (several per file, or split across files): cut from the paragraph
+   containing epubStart up to the one containing epubEnd, pulling in the short heading lines just above */
+const HEADLINE=/^(BOOK [A-Z]+\s*)?[IVXLC]*$/;
+const normText=n=>(n.textContent||'').replace(/\s+/g,' ').trim();
+async function showSpan(book,c,box){
+  const sp=book.spine||[];let i=sp.findIndex(x=>x.endsWith(c.epubHref));if(i<0)return false;
+  const start=c.epubStart.replace(/\s+/g,' ').trim(),end=c.epubEnd?c.epubEnd.replace(/\s+/g,' ').trim():'';
+  const node=document.createElement('div');let started=false,done=false;
+  for(let n=0;i<sp.length&&!done&&n<4;i++,n++){
+    const part=await chapterHtml(book,sp[i]);if(!part)continue;
+    const kids=[...part.childNodes];
+    for(let k=0;k<kids.length;k++){
+      const t=normText(kids[k]);
+      if(!started){
+        if(!t.includes(start))continue;
+        started=true;const pre=[];
+        for(let j=k-1;j>=0&&j>k-30;j--){const u=normText(kids[j]);if(!u||HEADLINE.test(u))pre.unshift(kids[j]);else break}
+        pre.forEach(p=>node.appendChild(p));
+      }else if(end&&t.includes(end)){done=true;break}
+      node.appendChild(kids[k]);
+    }
+    if(!started)return false;
+  }
+  if(!started)return false;
+  while(node.lastChild&&HEADLINE.test(normText(node.lastChild)))node.removeChild(node.lastChild);
+  box.innerHTML='';node.className='orig';box.appendChild(node);
+  const ex=document.getElementById('excerpt');if(ex)ex.hidden=false;
+  return true;
 }
 async function showHref(book,k,box,list){
   let node=null;
