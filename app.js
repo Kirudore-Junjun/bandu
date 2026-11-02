@@ -221,13 +221,15 @@ function chapterRange(book,k){
    containing epubStart up to the one containing epubEnd, pulling in the short heading lines just above */
 const HEADLINE=/^(BOOK [A-Z]+\s*)?[IVXLC]*$/;
 const normText=n=>(n.textContent||'').replace(/\s+/g,' ').trim();
+/* some epubs wrap a whole part in one <div>: open such wrappers so the cut works paragraph by paragraph */
+const flatKids=n=>[...n.childNodes].flatMap(k=>k.nodeType===1&&k.tagName==='DIV'&&k.querySelector('p')?flatKids(k):[k]);
 async function showSpan(book,c,box){
   const sp=book.spine||[];let i=sp.findIndex(x=>x.endsWith(c.epubHref));if(i<0)return false;
   const start=c.epubStart.replace(/\s+/g,' ').trim(),end=c.epubEnd?c.epubEnd.replace(/\s+/g,' ').trim():'';
   const node=document.createElement('div');let started=false,done=false;
   for(let n=0;i<sp.length&&!done&&n<4;i++,n++){
     const part=await chapterHtml(book,sp[i]);if(!part)continue;
-    const kids=[...part.childNodes];
+    const kids=flatKids(part);
     for(let k=0;k<kids.length;k++){
       const t=normText(kids[k]);
       if(!started){
@@ -241,7 +243,7 @@ async function showSpan(book,c,box){
     if(!started)return false;
   }
   if(!started)return false;
-  while(node.lastChild&&HEADLINE.test(normText(node.lastChild)))node.removeChild(node.lastChild);
+  while(node.lastChild&&(HEADLINE.test(normText(node.lastChild))||/^[—–\-*·\s]+$/.test(normText(node.lastChild))))node.removeChild(node.lastChild);
   box.innerHTML='';node.className='orig';box.appendChild(node);
   const ex=document.getElementById('excerpt');if(ex)ex.hidden=false;
   return true;
