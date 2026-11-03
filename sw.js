@@ -2,7 +2,7 @@
    App shell: cache first (bump VERSION to ship a new shell).
    data/*: network first, falling back to cache, so new guides show up when online
    and everything already opened still works offline. */
-const VERSION = 'bandu-v3';
+const VERSION = 'bandu-v4';
 const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'vendor/jszip.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'data/books.json'];
 

@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const app=document.getElementById('app');
-const S={books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{}},updated:''};
+const S={books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:''}};
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -28,7 +28,7 @@ const bookIdOfCh=cid=>{const b=S.books.filter(b=>cid.startsWith(b.id+'-')).sort(
 /* ---------- data ---------- */
 async function getJSON(u){const r=await fetch(u,{cache:'no-cache'});if(!r.ok)throw new Error(r.status);return r.json()}
 async function loadShelf(){
-  try{const d=await getJSON('data/books.json');S.books=d.books||[];S.updated=d.updated||'';S.loaded=true;S.failed=false}
+  try{const d=await getJSON('data/books.json');S.books=d.books||[];S.tags=d.tags||[];S.updated=d.updated||'';S.loaded=true;S.failed=false}
   catch(e){S.failed=true;S.loaded=true}
   render();
   /* warm the offline cache with every book's guides once the shelf is up */
@@ -42,7 +42,8 @@ function ensureChapters(bid){
 }
 
 /* ---------- progress (on this device) ---------- */
-function loadProg(){try{const p=JSON.parse(ls('bandu-prog')||'null');if(p)S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{}}}catch(e){}}
+function loadProg(){try{const p=JSON.parse(ls('bandu-prog')||'null');if(p)S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},recent:p.recent||{}}}catch(e){}
+  try{const f=JSON.parse(ls('bandu-filter')||'null');if(f)S.f=Object.assign(S.f,f,{q:''})}catch(e){}}
 function saveProg(){ls('bandu-prog',JSON.stringify(S.prog));idbPut('prog-backup',JSON.stringify(S.prog))}
 function setStatus(cid,val){S.prog.status[cid]=S.prog.status[cid]===val?'':val;if(!S.prog.status[cid])delete S.prog.status[cid];saveProg();render()}
 function toggleStar(key){if(S.prog.starred[key])delete S.prog.starred[key];else S.prog.starred[key]=true;saveProg();render()}
@@ -57,6 +58,7 @@ function backup(){
 async function restore(file){
   try{const d=JSON.parse(await file.text());const p=d.progress||d;
     if(!p||typeof p!=='object'||!('status' in p||'notes' in p||'starred' in p))throw 0;
+    S.prog.recent=S.prog.recent||{};for(const k in (p.recent||{})){if(!S.prog.recent[k]||S.prog.recent[k].t<p.recent[k].t)S.prog.recent[k]=p.recent[k]}
     /* merge: keep what is here, add what the backup has */
     S.prog.status=Object.assign({},p.status,S.prog.status);
     S.prog.starred=Object.assign({},p.starred,S.prog.starred);
@@ -76,21 +78,58 @@ function installTip(){
   const how=ios?'在 Safari 里点底部的「分享」按钮，选「添加到主屏幕」。':'在浏览器菜单里选「安装应用」或「添加到主屏幕」。';
   return `<div class="install"><button class="x" data-tipoff aria-label="不再提示">×</button><b>装到手机主屏幕</b>${how}之后就像 App 一样打开，没网也能看。</div>`;
 }
+/* where each book stands, from the reading marks on this device */
+function bookState(b){
+  const guided=b.guided||[],total=b.chapterCount||guided.length;
+  const done=guided.filter(k=>S.prog.status[b.id+'-'+k]).length;
+  const st=total&&done>=total?'done':(done||guided.some(k=>S.prog.status[b.id+'-'+k])||S.prog.recent[b.id])?'reading':'new';
+  return {guided,total,done,st};
+}
+const ST_LABEL={reading:'在读',done:'读完',new:'没开始'};
+function noteRecent(bid,cid){
+  if(!bid)return;const r=S.prog.recent||(S.prog.recent={});const prev=r[bid]||{};
+  let ch=prev.ch||'',c=cid?findCh(cid):null;
+  if(c)ch=(c.label&&c.label!==c.titleZh?c.label+' · ':'')+(c.titleZh||c.titleEn||'');
+  r[bid]={t:Date.now(),cid:cid||prev.cid||'',ch};
+  ls('bandu-prog',JSON.stringify(S.prog));
+}
+function shelfList(){
+  const f=S.f,q=f.q.trim().toLowerCase();
+  const rec=b=>(S.prog.recent[b.id]||{}).t||0;
+  const list=S.books.filter(b=>{
+    if(f.tag&&!(b.tags||[]).includes(f.tag))return false;
+    if(f.lang&&b.lang!==f.lang)return false;
+    if(f.st&&bookState(b).st!==f.st)return false;
+    if(q&&!(b.titleZh+' '+b.titleEn+' '+b.author+' '+(b.spine||'')).toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,c)=>rec(c)-rec(a)||(c.order||0)-(a.order||0));
+  if(!list.length)return '<div class="empty">没有符合条件的书。</div>';
+  return list.map(b=>{const {guided,total,done,st}=bookState(b);
+    return `<button class="book" data-go="b-${esc(b.id)}"><div class="spine">${esc(String(b.spine||b.titleZh).slice(0,5))}</div><div class="bk">
+      <h2>${esc(b.titleZh)}</h2><div class="meta">${esc(b.author)}</div>
+      <div class="meta2"><span class="st st-${st}">${ST_LABEL[st]}</span>${(b.tags||[]).map(t=>`<span class="tg">${esc(t)}</span>`).join('')}<span class="cnt">${done}/${total}</span></div>
+      <div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('');
+}
+function chip(attr,val,label,on){return `<button class="chip" data-${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`}
 function viewShelf(){
   const starCount=Object.keys(S.prog.starred).length;
   let h=`<div class="view"><div class="shelf-head"><div class="eyebrow">伴读书房</div><h1>我的书架</h1><p>先看导读抓重点，再回原书精读。</p></div>`;
   h+=installTip();
-  if(!S.books.length)h+=`<div class="empty">${S.failed?'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。':S.loaded?'书架还是空的。':'加载中…'}</div>`;
-  h+='<div class="books">';
-  for(const b of S.books){
-    const guided=b.guided||[],total=b.chapterCount||guided.length;
-    const done=guided.filter(k=>S.prog.status[b.id+'-'+k]).length;
-    h+=`<button class="book" data-go="b-${esc(b.id)}"><div class="spine">${esc(b.spine||String(b.titleZh).slice(0,6))}</div><div>
-      <h2>${esc(b.titleZh)}</h2><div class="en">${esc(b.titleEn)}</div>
-      <div class="meta">${esc(b.author)} · 导读 ${guided.length}/${total} 章 · 已读 ${done}</div>
-      <div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`;
+  if(!S.books.length){h+=`<div class="empty">${S.failed?'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。':S.loaded?'书架还是空的。':'加载中…'}</div>`}
+  else{
+    const recent=S.books.filter(b=>S.prog.recent[b.id]).sort((a,c)=>S.prog.recent[c.id].t-S.prog.recent[a.id].t).slice(0,3);
+    if(recent.length){
+      h+='<h2 class="sec">继续读</h2><div class="cont">'+recent.map(b=>{const r=S.prog.recent[b.id];const {done,total}=bookState(b);
+        return `<button class="contcard" data-go="${r.cid?'c-'+esc(r.cid):'b-'+esc(b.id)}"><div class="spine">${esc(String(b.spine||b.titleZh).slice(0,5))}</div><div>
+          <b>${esc(b.titleZh)}</b><div class="meta">${r.ch?'上次：'+esc(r.ch):'导读目录'}</div><div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('')+'</div>';
+    }
+    const tags=S.tags.length?S.tags:[...new Set(S.books.flatMap(b=>b.tags||[]))];
+    const f=S.f;
+    h+=`<div class="filters"><input id="shelfq" type="search" placeholder="搜书名或作者" value="${esc(f.q)}" autocomplete="off">
+      <div class="chips">${chip('ftag','','全部',!f.tag)}${tags.map(t=>chip('ftag',t,t,f.tag===t)).join('')}</div>
+      <div class="chips">${chip('flang','zh','中文',f.lang==='zh')}${chip('flang','en','English',f.lang==='en')}<span class="sep"></span>${chip('fst','reading','在读',f.st==='reading')}${chip('fst','done','读完',f.st==='done')}${chip('fst','new','没开始',f.st==='new')}</div></div>`;
+    h+=`<div class="books" id="booklist">${shelfList()}</div>`;
   }
-  h+='</div>';
   if(starCount)h+=`<div class="actions" style="margin-top:24px"><button class="btn" data-go="starred">★ 收藏的表达（${starCount}）</button></div>`;
   h+=`<div class="shelf-foot">已读、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。${S.updated?`<br>导读更新于 ${esc(S.updated)}`:''}
     <div class="actions"><button class="btn" data-backup>备份我的进度</button><button class="btn" data-restore>从备份恢复</button></div></div>`;
@@ -263,6 +302,8 @@ document.addEventListener('selectionchange',()=>{const sel=window.getSelection()
 /* ---------- render & events ---------- */
 function render(){
   const h=decodeURIComponent((location.hash||'').slice(1));let html,reader=null;
+  if(h.startsWith('c-')||h.startsWith('r-')){const cid=h.slice(2);if(S.books.length)noteRecent(bookIdOfCh(cid),cid)}
+  else if(h.startsWith('b-')&&bookOf(h.slice(2)))noteRecent(h.slice(2));
   if(h.startsWith('b-'))html=viewBook(h.slice(2));
   else if(h.startsWith('c-'))html=viewChapter(h.slice(2));
   else if(h.startsWith('r-')){reader=h.slice(2);html=viewReader(reader)}
@@ -290,6 +331,7 @@ app.addEventListener('click',async e=>{
   if(t.dataset.star){toggleStar(t.dataset.star);return}
   if(t.dataset.size){const n=Math.min(26,Math.max(14,+(ls('rsize')||18)+(+t.dataset.size)*2));ls('rsize',String(n));const r=document.getElementById('reader');if(r)r.style.setProperty('--rs',n+'px');return}
   if(t.dataset.tocpick!==undefined){const c=findCh(t.dataset.cid);const b=c&&S.epubs[c.bookId];if(b)await showHref(b,+t.dataset.tocpick,document.getElementById('reader'));return}
+  for(const [k,a] of [['tag','ftag'],['lang','flang'],['st','fst']])if(t.dataset[a]!==undefined){const v=t.dataset[a];S.f[k]=(k!=='tag'&&S.f[k]===v)?'':v;ls('bandu-filter',JSON.stringify({tag:S.f.tag,lang:S.f.lang,st:S.f.st}));render();return}
   if(t.dataset.backup!==undefined){backup();return}
   if(t.dataset.restore!==undefined){document.getElementById('restorefile').click();return}
   if(t.dataset.tipoff!==undefined){ls('bandu-tip','off');render();return}
@@ -299,7 +341,7 @@ document.body.addEventListener('click',e=>{const t=e.target.closest('#excerpt');
   const cid=t.dataset.excerpt;const s=lastSel||String(window.getSelection()||'').trim();
   if(!s){toast('先长按选中一段原文');return}
   const cur=S.prog.notes[cid]||'';S.prog.notes[cid]=(cur?cur.replace(/\s*$/,'')+'\n\n':'')+'> '+s.replace(/\s+/g,' ');saveProg();lastSel='';toast('已摘录到本章笔记')});
-app.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.note!==undefined)noteInput(t.dataset.note,t.value)});
+app.addEventListener('input',e=>{const t=e.target;if(t.id==='shelfq'){S.f.q=t.value;const l=document.getElementById('booklist');if(l)l.innerHTML=shelfList();return}if(t.dataset&&t.dataset.note!==undefined)noteInput(t.dataset.note,t.value)});
 app.addEventListener('change',async e=>{const t=e.target;if(t.id!=='epubfile'||!t.files[0])return;
   const box=document.getElementById('reader');box.innerHTML='<div class="empty">正在解析 epub…</div>';
   try{const buf=await t.files[0].arrayBuffer();S.epubs[t.dataset.book]=await openEpub(buf);idbPut('epub:'+t.dataset.book,buf);fillReader(t.dataset.cid)}
@@ -308,7 +350,7 @@ app.addEventListener('change',async e=>{const t=e.target;if(t.id!=='epubfile'||!
 /* ---------- boot ---------- */
 loadProg();
 (async()=>{ /* if localStorage was cleared but IndexedDB survived, bring progress back */
-  if(!ls('bandu-prog')){const b=await idbGet('prog-backup');if(b){try{const p=JSON.parse(b);S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{}};ls('bandu-prog',b);render()}catch(e){}}}
+  if(!ls('bandu-prog')){const b=await idbGet('prog-backup');if(b){try{const p=JSON.parse(b);S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},recent:p.recent||{}};ls('bandu-prog',b);render()}catch(e){}}}
 })();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 render();
