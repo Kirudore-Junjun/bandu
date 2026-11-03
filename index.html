@@ -138,7 +138,7 @@ section.block>h2{font-size:19px;padding-bottom:8px;border-bottom:1px solid var(-
 .qa{padding-block:16px;border-bottom:1px dashed var(--line)}
 .qa:last-child{border-bottom:0}
 .qa .ask{display:flex;gap:10px;align-items:baseline;font-weight:600}
-.qa .ask::before{content:"问";flex:none;font-size:12px;font-weight:400;border-radius:4px;padding:0 6px;background:var(--accent);color:var(--accent-ink)}
+.qa .ask::before{content:attr(data-q);flex:none;font-size:12px;font-weight:400;border-radius:4px;padding:0 6px;background:var(--accent);color:var(--accent-ink)}
 .qa .ans{margin-top:6px}
 .qa .when{font-size:12px;color:var(--muted);margin-top:4px}
 textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);
@@ -170,6 +170,15 @@ textarea{width:100%;min-height:140px;border:1px solid var(--line);border-radius:
 .toclist button{width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:10px 0;font-family:var(--f-en)}
 
 .empty{color:var(--muted);text-align:center;padding:60px 0}
+/* English mode */
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.spine.sp-en{font-family:var(--f-en);font-size:9px;letter-spacing:0}
+.zhsub{font-family:var(--f-display);color:var(--muted);font-size:15px}
+.toc .t span.zhsub{font-family:var(--f-display);font-style:normal}
+.untrans{font-size:13px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:6px;padding:8px 12px;margin:14px 0 0}
+.enn{color:var(--muted)}
+html[lang="en"] body{line-height:1.65}
+html[lang="en"] .md,html[lang="en"] .lede,html[lang="en"] .qs{font-family:var(--f-en)}
 .note{color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.view{animation:fade .2s ease-out}}
 @keyframes fade{from{opacity:.4}to{opacity:1}}

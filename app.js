@@ -1,7 +1,59 @@
 (function(){
 'use strict';
 const app=document.getElementById('app');
-const S={books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:''}};
+const S={en:{books:{},tags:{}},chEn:{},enLoading:{},books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:''}};
+
+/* ---------- language ---------- */
+let UI=(()=>{try{return localStorage.getItem('bandu-ui')||''}catch(e){return ''}})()||'zh';
+const L={
+zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导读抓重点，再回原书精读。',toc:'目录',guide:'导读',
+  reading:'在读',done:'读完',fresh:'没开始',cont:'继续读',last:'上次：',tocLabel:'导读目录',search:'搜书名或作者',all:'全部',
+  zhBooks:'中文',enBooks:'English',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
+  shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
+  updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
+  points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
+  notePh:'写下你的想法、疑问，或想回头精读的段落…',prev:'上一章',next:'下一章',star:'收藏',unstar:'取消收藏',starredTitle:'收藏的表达',
+  noStars:'还没有收藏。在章节导读里点 ☆ 收藏。',toGuide:'去导读',notFound:'找不到这一页。',editing:'编辑中…',savedHere:'已保存在这台设备上',
+  backupName:'伴读书房-进度-',restored:'已恢复备份',badBackup:'这个文件不是伴读书房的备份',offline:'没有网络，这本书的导读还没存到本机',
+  installT:'装到手机主屏幕',installIos:'在 Safari 里点底部的「分享」按钮，选「添加到主屏幕」。',installOther:'在浏览器菜单里选「安装应用」或「添加到主屏幕」。',
+  installTail:'之后就像 App 一样打开，没网也能看。',noTip:'不再提示',smaller:'缩小字号',larger:'放大字号',opening:'正在打开原书…',
+  pickT:'选择这本书的 epub 文件',pickP1:'文件只在这台设备上打开和保存，不会上传。',pickP2:'选过一次后，这台设备会记住它。',pickBtn:'选择 epub 文件',
+  noTocT:'没在目录里自动找到这一章',noTocP:'请从下面选择对应的章节。',otherFile:'换一个 epub 文件',badCh:'这一章的文件打不开。',
+  parsing:'正在解析 epub…',badEpub:'这个文件打不开，请确认是 epub 格式。',selFirst:'先长按选中一段原文',excerpted:'已摘录到本章笔记',excerpt:'摘录选中',
+  q:'问',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
+en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the guide for the key points, then go back to the book for a close read.',toc:'Contents',guide:'Guide',
+  reading:'Reading',done:'Finished',fresh:'Not started',cont:'Continue reading',last:'Last: ',tocLabel:'Contents',search:'Search title or author',all:'All',
+  zhBooks:'Chinese',enBooks:'English',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
+  shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
+  updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
+  points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
+  notePh:'Write down thoughts, questions, or passages to come back to…',prev:'Previous',next:'Next',star:'Save',unstar:'Remove',starredTitle:'Saved expressions',
+  noStars:'Nothing saved yet. Tap ☆ next to an expression in a chapter guide.',toGuide:'Open guide',notFound:'Page not found.',editing:'Editing…',savedHere:'Saved on this device',
+  backupName:'bandu-progress-',restored:'Backup restored',badBackup:'This file is not a Bandu backup',offline:'Offline: this book’s guides are not saved on this device yet',
+  installT:'Add to your home screen',installIos:'In Safari, tap Share at the bottom and choose “Add to Home Screen”.',installOther:'In the browser menu, choose “Install app” or “Add to Home screen”.',
+  installTail:' It then opens like an app and works offline.',noTip:'Don’t show again',smaller:'Smaller text',larger:'Larger text',opening:'Opening the book…',
+  pickT:'Choose this book’s epub file',pickP1:'The file is opened and kept only on this device. It is never uploaded.',pickP2:'After the first time, this device remembers it.',pickBtn:'Choose epub file',
+  noTocT:'Couldn’t find this chapter in the table of contents',noTocP:'Pick the matching chapter below.',otherFile:'Use a different epub file',badCh:'This chapter’s file can’t be opened.',
+  parsing:'Reading the epub…',badEpub:'This file can’t be opened. Is it an epub?',selFirst:'Long-press to select a passage first',excerpted:'Saved to this chapter’s notes',excerpt:'Save selection',
+  q:'Q',switchTo:'中文',switchLabel:'切换到中文',untrans:'This guide hasn’t been translated yet, so it is shown in Chinese.',enCount:' in English'}};
+const t=k=>(L[UI]&&L[UI][k]!==undefined?L[UI][k]:L.zh[k]);
+const EN=()=>UI==='en';
+function setUI(v){UI=v;try{localStorage.setItem('bandu-ui',v)}catch(e){}document.documentElement.lang=v==='en'?'en':'zh-CN';document.title=t('app');
+  if(EN())S.books.forEach(b=>{if(S.chapters[b.id]!==undefined)ensureEn(b.id)});render()}
+const langBtn=()=>`<button class="chipbtn" data-ui="${EN()?'zh':'en'}" aria-label="${esc(t('switchLabel'))}">${esc(t('switchTo'))}</button>`;
+/* display helpers: in English mode the English title leads and the Chinese title follows */
+const enB=b=>(S.en.books||{})[b.id]||{};
+const bTitle=b=>EN()?(b.titleEn||b.titleZh):b.titleZh;
+const bSub=b=>EN()?(b.titleEn&&b.titleZh!==b.titleEn?b.titleZh:''):b.titleEn;
+const bAuthor=b=>EN()?(enB(b).author||b.author):b.author;
+const bSpine=b=>EN()?(enB(b).spine||String(b.titleEn||b.titleZh).split(/[:：]/)[0]).slice(0,14):String(b.spine||b.titleZh).slice(0,5);
+const tagName=x=>EN()?((S.en.tags||{})[x]||x):x;
+const LBL={'小品':'Sketch','序':'Preface','导读':'Intro','导':'Intro','结':'End','开':'Open','附':'Appx.','审视':'Review','回忆':'Memoir','后记':'Afterword','导言':'Intro'};
+const lab=l=>{if(!EN()||!l)return l||'';let m=String(l).match(/^第\s*(\S+?)\s*章$/);if(m)return 'Ch. '+m[1];m=String(l).match(/^(.*·)序$/);if(m)return m[1]+'Preface';return LBL[l]||l};
+const oTitle=o=>EN()?(o.titleEn||o.titleZh):o.titleZh;
+const oSub=o=>EN()?(o.titleZh&&o.titleZh!==o.titleEn?o.titleZh:''):o.titleEn;
+/* a chapter in the current language: the English overlay replaces the guide text when it exists */
+function cx(c){if(!c||!EN())return c;const l=S.chEn[c.bookId];const e=l&&l.find(x=>x.key===c.key);return e?Object.assign({},c,e,{_en:true}):Object.assign({},c,{_en:false})}
 
 /* ---------- helpers ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -30,14 +82,20 @@ async function getJSON(u){const r=await fetch(u,{cache:'no-cache'});if(!r.ok)thr
 async function loadShelf(){
   try{const d=await getJSON('data/books.json');S.books=d.books||[];S.tags=d.tags||[];S.updated=d.updated||'';S.loaded=true;S.failed=false}
   catch(e){S.failed=true;S.loaded=true}
+  try{const e=await getJSON('data/en/books.json');S.en={books:e.books||{},tags:e.tags||{}}}catch(e){}
   render();
   /* warm the offline cache with every book's guides once the shelf is up */
   if('serviceWorker' in navigator&&S.books.length&&!S.failed)
-    navigator.serviceWorker.ready.then(reg=>reg.active&&reg.active.postMessage({type:'prefetch',urls:['data/books.json',...S.books.map(b=>'data/chapters/'+b.id+'.json')]})).catch(()=>{});
+    navigator.serviceWorker.ready.then(reg=>reg.active&&reg.active.postMessage({type:'prefetch',urls:['data/books.json','data/en/books.json',...S.books.map(b=>'data/chapters/'+b.id+'.json'),...S.books.filter(b=>(enB(b).guided||[]).length).map(b=>'data/en/chapters/'+b.id+'.json')]})).catch(()=>{});
+}
+function ensureEn(bid){
+  const b=bookOf(bid);if(!EN()||!b||!(enB(b).guided||[]).length||S.chEn[bid]||S.enLoading[bid])return;
+  S.enLoading[bid]=getJSON('data/en/chapters/'+bid+'.json').then(l=>{S.chEn[bid]=l}).catch(()=>{S.chEn[bid]=[]}).finally(()=>{delete S.enLoading[bid];render()});
 }
 function ensureChapters(bid){
+  ensureEn(bid);
   if(!bid||S.chapters[bid]||S.loading[bid]||S.chFail[bid])return;
-  S.loading[bid]=getJSON('data/chapters/'+bid+'.json').then(l=>{S.chapters[bid]=l}).catch(()=>{S.chFail[bid]=true;toast('没有网络，这本书的导读还没存到本机')})
+  S.loading[bid]=getJSON('data/chapters/'+bid+'.json').then(l=>{S.chapters[bid]=l}).catch(()=>{S.chFail[bid]=true;toast(t('offline'))})
     .finally(()=>{delete S.loading[bid];render()});
 }
 
@@ -48,11 +106,11 @@ function saveProg(){ls('bandu-prog',JSON.stringify(S.prog));idbPut('prog-backup'
 function setStatus(cid,val){S.prog.status[cid]=S.prog.status[cid]===val?'':val;if(!S.prog.status[cid])delete S.prog.status[cid];saveProg();render()}
 function toggleStar(key){if(S.prog.starred[key])delete S.prog.starred[key];else S.prog.starred[key]=true;saveProg();render()}
 let noteTimer=null;
-function noteInput(cid,val){S.prog.notes[cid]=val;const s=document.getElementById('saved');if(s)s.textContent='编辑中…';
-  clearTimeout(noteTimer);noteTimer=setTimeout(()=>{if(!S.prog.notes[cid])delete S.prog.notes[cid];saveProg();const s2=document.getElementById('saved');if(s2)s2.textContent='已保存在这台设备上'},700)}
+function noteInput(cid,val){S.prog.notes[cid]=val;const s=document.getElementById('saved');if(s)s.textContent=t('editing');
+  clearTimeout(noteTimer);noteTimer=setTimeout(()=>{if(!S.prog.notes[cid])delete S.prog.notes[cid];saveProg();const s2=document.getElementById('saved');if(s2)s2.textContent=t('savedHere')},700)}
 function backup(){
   const blob=new Blob([JSON.stringify({app:'bandu',saved:new Date().toISOString(),progress:S.prog},null,1)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='伴读书房-进度-'+new Date().toISOString().slice(0,10)+'.json';
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=t('backupName')+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
 }
 async function restore(file){
@@ -63,8 +121,8 @@ async function restore(file){
     S.prog.status=Object.assign({},p.status,S.prog.status);
     S.prog.starred=Object.assign({},p.starred,S.prog.starred);
     for(const k in (p.notes||{})){const a=S.prog.notes[k],b=p.notes[k];S.prog.notes[k]=!a?b:(a===b||a.includes(b)?a:a+'\n\n'+b)}
-    saveProg();render();toast('已恢复备份');
-  }catch(e){toast('这个文件不是伴读书房的备份')}
+    saveProg();render();toast(t('restored'));
+  }catch(e){toast(t('badBackup'))}
 }
 
 /* ---------- views ---------- */
@@ -75,8 +133,8 @@ const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator
 function installTip(){
   if(standalone()||ls('bandu-tip')==='off')return '';
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const how=ios?'在 Safari 里点底部的「分享」按钮，选「添加到主屏幕」。':'在浏览器菜单里选「安装应用」或「添加到主屏幕」。';
-  return `<div class="install"><button class="x" data-tipoff aria-label="不再提示">×</button><b>装到手机主屏幕</b>${how}之后就像 App 一样打开，没网也能看。</div>`;
+  const how=ios?t('installIos'):t('installOther');
+  return `<div class="install"><button class="x" data-tipoff aria-label="${esc(t('noTip'))}">×</button><b>${esc(t('installT'))}</b>${esc(how)}${esc(t('installTail'))}</div>`;
 }
 /* where each book stands, from the reading marks on this device */
 function bookState(b){
@@ -85,7 +143,7 @@ function bookState(b){
   const st=total&&done>=total?'done':(done||guided.some(k=>S.prog.status[b.id+'-'+k])||S.prog.recent[b.id])?'reading':'new';
   return {guided,total,done,st};
 }
-const ST_LABEL={reading:'在读',done:'读完',new:'没开始'};
+const ST_LABEL={get reading(){return t('reading')},get done(){return t('done')},get new(){return t('fresh')}};
 function noteRecent(bid,cid){
   if(!bid)return;const r=S.prog.recent||(S.prog.recent={});const prev=r[bid]||{};
   let ch=prev.ch||'',c=cid?findCh(cid):null;
@@ -100,96 +158,101 @@ function shelfList(){
     if(f.tag&&!(b.tags||[]).includes(f.tag))return false;
     if(f.lang&&b.lang!==f.lang)return false;
     if(f.st&&bookState(b).st!==f.st)return false;
-    if(q&&!(b.titleZh+' '+b.titleEn+' '+b.author+' '+(b.spine||'')).toLowerCase().includes(q))return false;
+    if(q&&!(b.titleZh+' '+b.titleEn+' '+b.author+' '+bAuthor(b)+' '+(b.spine||'')).toLowerCase().includes(q))return false;
     return true;
   }).sort((a,c)=>rec(c)-rec(a)||(c.order||0)-(a.order||0));
-  if(!list.length)return '<div class="empty">没有符合条件的书。</div>';
+  if(!list.length)return `<div class="empty">${esc(t('noMatch'))}</div>`;
   return list.map(b=>{const {guided,total,done,st}=bookState(b);
-    return `<button class="book" data-go="b-${esc(b.id)}"><div class="spine">${esc(String(b.spine||b.titleZh).slice(0,5))}</div><div class="bk">
-      <h2>${esc(b.titleZh)}</h2><div class="meta">${esc(b.author)}</div>
-      <div class="meta2"><span class="st st-${st}">${ST_LABEL[st]}</span>${(b.tags||[]).map(t=>`<span class="tg">${esc(t)}</span>`).join('')}<span class="cnt">${done}/${total}</span></div>
+    const enN=EN()?(enB(b).guided||[]).length:0;
+    return `<button class="book" data-go="b-${esc(b.id)}"><div class="spine${EN()?' sp-en':''}">${esc(bSpine(b))}</div><div class="bk">
+      <h2>${esc(bTitle(b))}</h2><div class="meta">${esc(bAuthor(b))}</div>
+      <div class="meta2"><span class="st st-${st}">${ST_LABEL[st]}</span>${(b.tags||[]).map(x=>`<span class="tg">${esc(tagName(x))}</span>`).join('')}<span class="cnt">${EN()&&enN<(b.guided||[]).length?`<span class="enn">${enN?enN+' EN · ':'中文 · '}</span>`:''}${done}/${total}</span></div>
       <div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('');
 }
 function chip(attr,val,label,on){return `<button class="chip" data-${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`}
 function viewShelf(){
   const starCount=Object.keys(S.prog.starred).length;
-  let h=`<div class="view"><div class="shelf-head"><div class="eyebrow">伴读书房</div><h1>我的书架</h1><p>先看导读抓重点，再回原书精读。</p></div>`;
+  let h=`<div class="view"><div class="shelf-head"><div class="hrow"><div class="eyebrow">${esc(t('app'))}</div>${langBtn()}</div><h1>${esc(t('myShelf'))}</h1><p>${esc(t('tagline'))}</p></div>`;
   h+=installTip();
-  if(!S.books.length){h+=`<div class="empty">${S.failed?'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。':S.loaded?'书架还是空的。':'加载中…'}</div>`}
+  if(!S.books.length){h+=`<div class="empty">${esc(S.failed?t('shelfFail'):S.loaded?t('shelfEmpty'):t('loading'))}</div>`}
   else{
     const recent=S.books.filter(b=>S.prog.recent[b.id]).sort((a,c)=>S.prog.recent[c.id].t-S.prog.recent[a.id].t).slice(0,3);
     if(recent.length){
-      h+='<h2 class="sec">继续读</h2><div class="cont">'+recent.map(b=>{const r=S.prog.recent[b.id];const {done,total}=bookState(b);
-        return `<button class="contcard" data-go="${r.cid?'c-'+esc(r.cid):'b-'+esc(b.id)}"><div class="spine">${esc(String(b.spine||b.titleZh).slice(0,5))}</div><div>
-          <b>${esc(b.titleZh)}</b><div class="meta">${r.ch?'上次：'+esc(r.ch):'导读目录'}</div><div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('')+'</div>';
+      h+=`<h2 class="sec">${esc(t('cont'))}</h2><div class="cont">`+recent.map(b=>{const r=S.prog.recent[b.id];const {done,total}=bookState(b);
+        const rc=r.cid&&findCh(r.cid);const chl=rc?(rc.label&&rc.label!==rc.titleZh?lab(rc.label)+' · ':'')+oTitle(rc):r.ch;
+        return `<button class="contcard" data-go="${r.cid?'c-'+esc(r.cid):'b-'+esc(b.id)}"><div class="spine${EN()?' sp-en':''}">${esc(bSpine(b))}</div><div>
+          <b>${esc(bTitle(b))}</b><div class="meta">${chl?esc(t('last'))+esc(chl):esc(t('tocLabel'))}</div><div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('')+'</div>';
     }
     const tags=S.tags.length?S.tags:[...new Set(S.books.flatMap(b=>b.tags||[]))];
     const f=S.f;
-    h+=`<div class="filters"><input id="shelfq" type="search" placeholder="搜书名或作者" value="${esc(f.q)}" autocomplete="off">
-      <div class="chips">${chip('ftag','','全部',!f.tag)}${tags.map(t=>chip('ftag',t,t,f.tag===t)).join('')}</div>
-      <div class="chips">${chip('flang','zh','中文',f.lang==='zh')}${chip('flang','en','English',f.lang==='en')}<span class="sep"></span>${chip('fst','reading','在读',f.st==='reading')}${chip('fst','done','读完',f.st==='done')}${chip('fst','new','没开始',f.st==='new')}</div></div>`;
+    h+=`<div class="filters"><input id="shelfq" type="search" placeholder="${esc(t('search'))}" value="${esc(f.q)}" autocomplete="off">
+      <div class="chips">${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
+      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}</div></div>`;
     h+=`<div class="books" id="booklist">${shelfList()}</div>`;
   }
-  if(starCount)h+=`<div class="actions" style="margin-top:24px"><button class="btn" data-go="starred">★ 收藏的表达（${starCount}）</button></div>`;
-  h+=`<div class="shelf-foot">已读、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。${S.updated?`<br>导读更新于 ${esc(S.updated)}`:''}
-    <div class="actions"><button class="btn" data-backup>备份我的进度</button><button class="btn" data-restore>从备份恢复</button></div></div>`;
+  if(starCount)h+=`<div class="actions" style="margin-top:24px"><button class="btn" data-go="starred">${esc(t('starredBtn'))} (${starCount})</button></div>`;
+  h+=`<div class="shelf-foot">${esc(t('foot'))}${S.updated?`<br>${esc(t('updated'))}${esc(S.updated)}`:''}
+    <div class="actions"><button class="btn" data-backup>${esc(t('backup'))}</button><button class="btn" data-restore>${esc(t('restore'))}</button></div></div>`;
   return h+'</div>';
 }
 function viewBook(bid){
   const b=bookOf(bid);if(!b)return notFound();
   ensureChapters(bid);
   const chs=chOf(bid);
-  let h=bar('home','书架',b.titleZh)+`<div class="view bookhead"><div class="eyebrow">${esc(b.author)}${b.year?' · '+esc(b.year):''}</div><h1>${esc(b.titleZh)}</h1><div class="en">${esc(b.titleEn)}</div>`;
-  if(b.intro)h+=`<div class="md" style="margin-top:12px">${md(b.intro)}</div>`;
+  const intro=EN()?(enB(b).intro||b.intro):b.intro;
+  let h=bar('home',t('shelf'),bTitle(b),langBtn())+`<div class="view bookhead"><div class="eyebrow">${esc(bAuthor(b))}${b.year?' · '+esc(b.year):''}</div><h1>${esc(bTitle(b))}</h1><div class="${EN()?'zhsub':'en'}">${esc(bSub(b))}</div>`;
+  if(EN()&&!enB(b).intro)h+=`<p class="untrans">${esc(t('untrans'))}</p>`;
+  if(intro)h+=`<div class="md" style="margin-top:12px">${md(intro)}</div>`;
   h+='<ol class="toc">';
   const outline=b.outline&&b.outline.length?b.outline:chs.map(c=>({key:c.key,label:c.label,titleEn:c.titleEn,titleZh:c.titleZh}));
-  const guided=new Set(b.guided||chs.map(c=>c.key));
+  const guided=new Set(b.guided||chs.map(c=>c.key));const enSet=new Set(enB(b).guided||[]);
   for(const o of outline){
-    const c=chs.find(x=>x.key===o.key),has=guided.has(o.key),cid=b.id+'-'+o.key;
+    const c=cx(chs.find(x=>x.key===o.key)),has=guided.has(o.key),cid=b.id+'-'+o.key;
     const st=has?S.prog.status[cid]:'';
-    const pill=!has?'<span class="pill">待导读</span>':st==='deep'?'<span class="pill deep">想精读</span>':st==='read'?'<span class="pill read">已读</span>':'';
-    h+=`<li><button ${has?`data-go="c-${esc(cid)}"`:'disabled class="pending"'}><span class="no">${esc(o.label)}</span>
-      <span class="t"><b>${esc(o.titleZh)}</b><span>${esc(o.titleEn)}</span>${c&&c.lede?`<small>${esc(c.lede)}</small>`:''}</span>${pill}</button></li>`;
+    const pill=!has?`<span class="pill">${esc(t('pending'))}</span>`:st==='deep'?`<span class="pill deep">${esc(t('deep'))}</span>`:st==='read'?`<span class="pill read">${esc(t('read'))}</span>`:(EN()&&!enSet.has(o.key)?'<span class="pill">中文</span>':'');
+    h+=`<li><button ${has?`data-go="c-${esc(cid)}"`:'disabled class="pending"'}><span class="no">${esc(lab(o.label))}</span>
+      <span class="t"><b>${esc(oTitle(o))}</b><span class="${EN()?'zhsub':''}">${esc(oSub(o))}</span>${c&&c.lede?`<small>${inline(c.lede)}</small>`:''}</span>${pill}</button></li>`;
   }
   return h+'</ol></div>';
 }
 function viewChapter(cid){
   const bid=bookIdOfCh(cid);if(!bid)return notFound();
   ensureChapters(bid);
-  const c=findCh(cid);if(!c)return notFound(!S.chFail[bid]&&(S.chapters[bid]===undefined||!!S.loading[bid]));
-  const b=bookOf(bid)||{titleZh:''};
+  const c=cx(findCh(cid));if(!c)return notFound(!S.chFail[bid]&&(S.chapters[bid]===undefined||!!S.loading[bid]));
+  const b=bookOf(bid)||{titleZh:'',titleEn:''};
   const chs=chOf(bid),i=chs.findIndex(x=>x.id===cid),prev=chs[i-1],next=chs[i+1];
   const st=S.prog.status[cid]||'';
-  let h=bar('b-'+bid,'目录',b.titleZh)+`<div class="view"><div class="chhead"><div class="no">${esc(c.label)}</div><h1>${esc(c.titleZh)}</h1><div class="en">${esc(c.titleEn)}</div></div>`;
+  let h=bar('b-'+bid,t('toc'),bTitle(b),langBtn())+`<div class="view"><div class="chhead"><div class="no">${esc(lab(c.label))}</div><h1>${esc(oTitle(c))}</h1><div class="${EN()?'zhsub':'en'}">${esc(oSub(c))}</div></div>`;
+  if(EN()&&!c._en)h+=`<p class="untrans">${esc(t('untrans'))}</p>`;
   if(c.lede)h+=`<p class="lede">${inline(c.lede)}</p>`;
-  h+=`<div class="actions"><button class="btn primary" data-go="r-${esc(cid)}">读原文</button>
-    <button class="btn" aria-pressed="${st==='read'}" data-status="read" data-cid="${esc(cid)}">已读</button>
-    <button class="btn deepbtn" aria-pressed="${st==='deep'}" data-status="deep" data-cid="${esc(cid)}">想精读</button></div>`;
-  if(c.points&&c.points.length){h+='<section class="block"><h2>重点</h2>';
+  h+=`<div class="actions"><button class="btn primary" data-go="r-${esc(cid)}">${esc(t('readOrig'))}</button>
+    <button class="btn" aria-pressed="${st==='read'}" data-status="read" data-cid="${esc(cid)}">${esc(t('read'))}</button>
+    <button class="btn deepbtn" aria-pressed="${st==='deep'}" data-status="deep" data-cid="${esc(cid)}">${esc(t('deep'))}</button></div>`;
+  if(c.points&&c.points.length){h+=`<section class="block"><h2>${esc(t('points'))}</h2>`;
     c.points.forEach((p,k)=>{h+=`<div class="point"><h3><span class="n">${k+1}</span>${esc(p.h)}</h3><div class="md">${md(p.body)}</div></div>`});h+='</section>'}
-  if(c.expressions&&c.expressions.length){h+='<section class="block"><h2>有趣的表达</h2>';
+  if(c.expressions&&c.expressions.length){h+=`<section class="block"><h2>${esc(t('exprs'))}</h2>`;
     c.expressions.forEach((e,k)=>{const key=cid+'_'+k;h+=`<div class="expr"><div><q>${esc(e.en)}</q><div class="zh md">${md(e.zh)}</div></div>
-      <button class="star" aria-label="收藏" aria-pressed="${!!S.prog.starred[key]}" data-star="${esc(key)}">${S.prog.starred[key]?'★':'☆'}</button></div>`});h+='</section>'}
-  if(c.questions&&c.questions.length){h+='<section class="block"><h2>想一想</h2><ol class="qs">'+c.questions.map(q=>`<li>${inline(q)}</li>`).join('')+'</ol></section>'}
-  if(c.qa&&c.qa.length){h+='<section class="block"><h2>我的提问</h2>'+c.qa.map(x=>`<div class="qa"><div class="ask">${inline(x.q)}</div><div class="ans md">${md(x.a)}</div>${x.date?`<div class="when">${esc(x.date)}</div>`:''}</div>`).join('')+'</section>'}
-  h+=`<section class="block"><h2>我的笔记</h2><p class="note">读原文时选中句子，点「摘录选中」也会存到这里。</p>
-    <textarea id="note-${esc(cid)}" data-note="${esc(cid)}" placeholder="写下你的想法、疑问，或想回头精读的段落…">${esc(S.prog.notes[cid]||'')}</textarea><div class="saved" id="saved"></div></section>`;
-  h+=`<div class="pager"><button ${prev?`data-go="c-${esc(prev.id)}"`:'disabled'}><small>上一章</small>${prev?esc(prev.titleZh):''}</button>
-    <button ${next?`data-go="c-${esc(next.id)}"`:'disabled'}><small>下一章</small>${next?esc(next.titleZh):''}</button></div>`;
+      <button class="star" aria-label="${esc(t('star'))}" aria-pressed="${!!S.prog.starred[key]}" data-star="${esc(key)}">${S.prog.starred[key]?'★':'☆'}</button></div>`});h+='</section>'}
+  if(c.questions&&c.questions.length){h+=`<section class="block"><h2>${esc(t('think'))}</h2><ol class="qs">`+c.questions.map(q=>`<li>${inline(q)}</li>`).join('')+'</ol></section>'}
+  if(c.qa&&c.qa.length){h+=`<section class="block"><h2>${esc(t('myQs'))}</h2>`+c.qa.map(x=>`<div class="qa"><div class="ask" data-q="${esc(t('q'))}">${inline(x.q)}</div><div class="ans md">${md(x.a)}</div>${x.date?`<div class="when">${esc(x.date)}</div>`:''}</div>`).join('')+'</section>'}
+  h+=`<section class="block"><h2>${esc(t('myNotes'))}</h2><p class="note">${esc(t('noteTip'))}</p>
+    <textarea id="note-${esc(cid)}" data-note="${esc(cid)}" placeholder="${esc(t('notePh'))}">${esc(S.prog.notes[cid]||'')}</textarea><div class="saved" id="saved"></div></section>`;
+  h+=`<div class="pager"><button ${prev?`data-go="c-${esc(prev.id)}"`:'disabled'}><small>${esc(t('prev'))}</small>${prev?esc(oTitle(prev)):''}</button>
+    <button ${next?`data-go="c-${esc(next.id)}"`:'disabled'}><small>${esc(t('next'))}</small>${next?esc(oTitle(next)):''}</button></div>`;
   return h+'</div>';
 }
 function viewStarred(){
   const keys=Object.keys(S.prog.starred);
   for(const key of keys){const m=key.match(/^(.*)_(\d+)$/);if(m)ensureChapters(bookIdOfCh(m[1]))}
-  let h=bar('home','书架','收藏的表达')+'<div class="view"><h1 style="font-size:24px">收藏的表达</h1><div class="starred-list" style="margin-top:12px">';
-  if(!keys.length)h+='<div class="empty">还没有收藏。在章节导读里点 ☆ 收藏。</div>';
-  for(const key of keys){const m=key.match(/^(.*)_(\d+)$/);if(!m)continue;const c=findCh(m[1]);const e=c&&c.expressions&&c.expressions[+m[2]];if(!e)continue;
-    const b=bookOf(c.bookId)||{titleZh:''};
-    h+=`<div class="expr"><div><q>${esc(e.en)}</q><div class="zh md">${md(e.zh)}</div><div class="from">${esc(b.titleZh)} · ${esc(c.label)} ${esc(c.titleZh)} · <a href="#c-${esc(c.id)}">去导读</a></div></div>
-      <button class="star" aria-label="取消收藏" aria-pressed="true" data-star="${esc(key)}">★</button></div>`}
+  let h=bar('home',t('shelf'),t('starredTitle'),langBtn())+`<div class="view"><h1 style="font-size:24px">${esc(t('starredTitle'))}</h1><div class="starred-list" style="margin-top:12px">`;
+  if(!keys.length)h+=`<div class="empty">${esc(t('noStars'))}</div>`;
+  for(const key of keys){const m=key.match(/^(.*)_(\d+)$/);if(!m)continue;const c=cx(findCh(m[1]));const e=c&&c.expressions&&c.expressions[+m[2]];if(!e)continue;
+    const b=bookOf(c.bookId)||{titleZh:'',titleEn:''};
+    h+=`<div class="expr"><div><q>${esc(e.en)}</q><div class="zh md">${md(e.zh)}</div><div class="from">${esc(bTitle(b))} · ${esc(lab(c.label))} ${esc(oTitle(c))} · <a href="#c-${esc(c.id)}">${esc(t('toGuide'))}</a></div></div>
+      <button class="star" aria-label="${esc(t('unstar'))}" aria-pressed="true" data-star="${esc(key)}">★</button></div>`}
   return h+'</div></div>';
 }
-function notFound(loading){return bar('home','书架','')+`<div class="empty">${loading||!S.loaded?'加载中…':'找不到这一页。'}</div>`}
+function notFound(loading){return bar('home',t('shelf'),'')+`<div class="empty">${esc(loading||!S.loaded?t('loading'):t('notFound'))}</div>`}
 
 /* ---------- reader (local epub, never uploaded) ---------- */
 function idb(){return new Promise((res,rej)=>{try{const r=indexedDB.open('bandu',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})}
@@ -231,8 +294,8 @@ function viewReader(cid){
   const bid=bookIdOfCh(cid);if(bid)ensureChapters(bid);
   const c=findCh(cid);if(!c)return notFound(!S.chFail[bid]);
   const size=+(ls('rsize')||18);
-  return bar('c-'+cid,'导读',`${c.label} · ${c.titleEn}`,`<button class="chipbtn" data-size="-1" aria-label="缩小字号">A−</button><button class="chipbtn" data-size="1" aria-label="放大字号">A+</button>`)+
-    `<div class="view"><div id="reader" style="--rs:${size}px"><div class="empty">正在打开原书…</div></div></div><button class="excerpt" id="excerpt" data-excerpt="${esc(cid)}" hidden>摘录选中</button>`;
+  return bar('c-'+cid,t('guide'),`${lab(c.label)} · ${c.titleEn}`,`<button class="chipbtn" data-size="-1" aria-label="${esc(t('smaller'))}">A−</button><button class="chipbtn" data-size="1" aria-label="${esc(t('larger'))}">A+</button>`)+
+    `<div class="view"><div id="reader" style="--rs:${size}px"><div class="empty">${esc(t('opening'))}</div></div></div><button class="excerpt" id="excerpt" data-excerpt="${esc(cid)}" hidden>${esc(t('excerpt'))}</button>`;
 }
 function filePicker(c,cid,label,primary){return `<label class="btn${primary?' primary':''}" for="epubfile">${label}</label><input type="file" id="epubfile" accept=".epub,application/epub+zip" data-book="${esc(c.bookId)}" data-cid="${esc(cid)}">`}
 async function fillReader(cid){
@@ -240,13 +303,13 @@ async function fillReader(cid){
   let book=S.epubs[c.bookId];
   if(!book){const buf=await idbGet('epub:'+c.bookId);if(buf){try{book=S.epubs[c.bookId]=await openEpub(buf)}catch(e){book=null}}}
   if(!document.getElementById('reader'))return;
-  if(!book){box.innerHTML=`<div class="loadbox"><b>选择这本书的 epub 文件</b><p>文件只在这台设备上打开和保存，不会上传。</p><p>选过一次后，这台设备会记住它。</p>${filePicker(c,cid,'选择 epub 文件',true)}</div>`;return}
+  if(!book){box.innerHTML=`<div class="loadbox"><b>${esc(t('pickT'))}</b><p>${esc(t('pickP1'))}</p><p>${esc(t('pickP2'))}</p>${filePicker(c,cid,esc(t('pickBtn')),true)}</div>`;return}
   if(c.epubStart&&c.epubHref&&await showSpan(book,c,box))return;
   if(c.epubHref){const h=(book.spine||[]).find(x=>x.endsWith(c.epubHref));if(h){await showHref(book,-1,box,[h]);return}}
   const want=(c.epubLabel||c.titleEn||'').toLowerCase();
   const hit=book.toc.find(t=>t.label.toLowerCase()===want)||book.toc.find(t=>want&&t.label.toLowerCase().includes(want));
-  if(!hit){box.innerHTML=`<div class="loadbox"><b>没在目录里自动找到这一章</b><p>请从下面选择对应的章节。</p><ul class="toclist">${book.toc.map((t,k)=>`<li><button data-tocpick="${k}" data-cid="${esc(cid)}">${esc(t.label)}</button></li>`).join('')}</ul>
-    <p style="margin-top:14px">${filePicker(c,cid,'换一个 epub 文件')}</p></div>`;return}
+  if(!hit){box.innerHTML=`<div class="loadbox"><b>${esc(t('noTocT'))}</b><p>${esc(t('noTocP'))}</p><ul class="toclist">${book.toc.map((t,k)=>`<li><button data-tocpick="${k}" data-cid="${esc(cid)}">${esc(t.label)}</button></li>`).join('')}</ul>
+    <p style="margin-top:14px">${filePicker(c,cid,esc(t('otherFile')))}</p></div>`;return}
   await showHref(book,book.toc.indexOf(hit),box);
 }
 /* a chapter can span several spine files: read from its toc entry up to the next entry at the same or higher level */
@@ -291,7 +354,7 @@ async function showHref(book,k,box,list){
   let node=null;
   for(const href of (list||chapterRange(book,k))){const part=await chapterHtml(book,href);if(!part)continue;if(!node)node=part;else while(part.firstChild)node.appendChild(part.firstChild)}
   box.innerHTML='';
-  if(!node){box.innerHTML='<div class="empty">这一章的文件打不开。</div>';return}
+  if(!node){box.innerHTML=`<div class="empty">${esc(t('badCh'))}</div>`;return}
   node.className='orig';box.appendChild(node);
   const ex=document.getElementById('excerpt');if(ex)ex.hidden=false;
 }
@@ -327,6 +390,7 @@ window.addEventListener('popstate',()=>{if(!location.hash){render._reader=null;r
 app.addEventListener('click',async e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.go!==undefined){go(t.dataset.go);return}
+  if(t.dataset.ui){setUI(t.dataset.ui);return}
   if(t.dataset.status){setStatus(t.dataset.cid,t.dataset.status);return}
   if(t.dataset.star){toggleStar(t.dataset.star);return}
   if(t.dataset.size){const n=Math.min(26,Math.max(14,+(ls('rsize')||18)+(+t.dataset.size)*2));ls('rsize',String(n));const r=document.getElementById('reader');if(r)r.style.setProperty('--rs',n+'px');return}
@@ -337,18 +401,19 @@ app.addEventListener('click',async e=>{
   if(t.dataset.tipoff!==undefined){ls('bandu-tip','off');render();return}
 });
 document.getElementById('restorefile').addEventListener('change',e=>{const f=e.target.files[0];if(f)restore(f);e.target.value=''});
-document.body.addEventListener('click',e=>{const t=e.target.closest('#excerpt');if(!t)return;
-  const cid=t.dataset.excerpt;const s=lastSel||String(window.getSelection()||'').trim();
-  if(!s){toast('先长按选中一段原文');return}
-  const cur=S.prog.notes[cid]||'';S.prog.notes[cid]=(cur?cur.replace(/\s*$/,'')+'\n\n':'')+'> '+s.replace(/\s+/g,' ');saveProg();lastSel='';toast('已摘录到本章笔记')});
+document.body.addEventListener('click',e=>{const el=e.target.closest('#excerpt');if(!el)return;
+  const cid=el.dataset.excerpt;const s=lastSel||String(window.getSelection()||'').trim();
+  if(!s){toast(t('selFirst'));return}
+  const cur=S.prog.notes[cid]||'';S.prog.notes[cid]=(cur?cur.replace(/\s*$/,'')+'\n\n':'')+'> '+s.replace(/\s+/g,' ');saveProg();lastSel='';toast(t('excerpted'))});
 app.addEventListener('input',e=>{const t=e.target;if(t.id==='shelfq'){S.f.q=t.value;const l=document.getElementById('booklist');if(l)l.innerHTML=shelfList();return}if(t.dataset&&t.dataset.note!==undefined)noteInput(t.dataset.note,t.value)});
-app.addEventListener('change',async e=>{const t=e.target;if(t.id!=='epubfile'||!t.files[0])return;
-  const box=document.getElementById('reader');box.innerHTML='<div class="empty">正在解析 epub…</div>';
-  try{const buf=await t.files[0].arrayBuffer();S.epubs[t.dataset.book]=await openEpub(buf);idbPut('epub:'+t.dataset.book,buf);fillReader(t.dataset.cid)}
-  catch(err){box.innerHTML='<div class="empty">这个文件打不开，请确认是 epub 格式。</div>'}});
+app.addEventListener('change',async e=>{const inp=e.target;if(inp.id!=='epubfile'||!inp.files[0])return;
+  const box=document.getElementById('reader');box.innerHTML=`<div class="empty">${esc(t('parsing'))}</div>`;
+  try{const buf=await inp.files[0].arrayBuffer();S.epubs[inp.dataset.book]=await openEpub(buf);idbPut('epub:'+inp.dataset.book,buf);fillReader(inp.dataset.cid)}
+  catch(err){box.innerHTML=`<div class="empty">${esc(t('badEpub'))}</div>`}});
 
 /* ---------- boot ---------- */
 loadProg();
+document.documentElement.lang=EN()?'en':'zh-CN';document.title=t('app');
 (async()=>{ /* if localStorage was cleared but IndexedDB survived, bring progress back */
   if(!ls('bandu-prog')){const b=await idbGet('prog-backup');if(b){try{const p=JSON.parse(b);S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},recent:p.recent||{}};ls('bandu-prog',b);render()}catch(e){}}}
 })();
