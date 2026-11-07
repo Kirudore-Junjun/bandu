@@ -304,6 +304,8 @@ async function fillReader(cid){
   if(!book){const buf=await idbGet('epub:'+c.bookId);if(buf){try{book=S.epubs[c.bookId]=await openEpub(buf)}catch(e){book=null}}}
   if(!document.getElementById('reader'))return;
   if(!book){box.innerHTML=`<div class="loadbox"><b>${esc(t('pickT'))}</b><p>${esc(t('pickP1'))}</p><p>${esc(t('pickP2'))}</p>${filePicker(c,cid,esc(t('pickBtn')),true)}</div>`;return}
+  /* a guide covering several whole chapters, each in its own spine file */
+  if(c.epubHrefs&&c.epubHrefs.length){const sp=book.spine||[],hs=c.epubHrefs.map(h=>sp.find(x=>x.endsWith(h))).filter(Boolean);if(hs.length){await showHref(book,-1,box,hs);return}}
   if(c.epubStart&&c.epubHref&&await showSpan(book,c,box))return;
   if(c.epubHref){const h=(book.spine||[]).find(x=>x.endsWith(c.epubHref));if(h){await showHref(book,-1,box,[h]);return}}
   const want=(c.epubLabel||c.titleEn||'').toLowerCase();
