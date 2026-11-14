@@ -8,7 +8,7 @@ let UI=(()=>{try{return localStorage.getItem('bandu-ui')||''}catch(e){return ''}
 const L={
 zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导读抓重点，再回原书精读。',toc:'目录',guide:'导读',
   reading:'在读',done:'读完',fresh:'没开始',cont:'继续读',last:'上次：',tocLabel:'导读目录',search:'搜书名或作者',all:'全部',
-  zhBooks:'中文',enBooks:'English',nlBooks:'荷兰语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
+  zhBooks:'中文',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
   shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
   updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
   points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
@@ -23,7 +23,7 @@ zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导�
   q:'问',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
 en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the guide for the key points, then go back to the book for a close read.',toc:'Contents',guide:'Guide',
   reading:'Reading',done:'Finished',fresh:'Not started',cont:'Continue reading',last:'Last: ',tocLabel:'Contents',search:'Search title or author',all:'All',
-  zhBooks:'Chinese',enBooks:'English',nlBooks:'Dutch',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
+  zhBooks:'Chinese',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
   shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
   updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
   points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
@@ -187,7 +187,7 @@ function viewShelf(){
     const f=S.f;
     h+=`<div class="filters"><input id="shelfq" type="search" placeholder="${esc(t('search'))}" value="${esc(f.q)}" autocomplete="off">
       <div class="chips">${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
-      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}</div></div>`;
+      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}</div></div>`;
     h+=`<div class="books" id="booklist">${shelfList()}</div>`;
   }
   if(starCount)h+=`<div class="actions" style="margin-top:24px"><button class="btn" data-go="starred">${esc(t('starredBtn'))} (${starCount})</button></div>`;
