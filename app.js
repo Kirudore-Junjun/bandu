@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const app=document.getElementById('app');
-const S={en:{books:{},tags:{}},chEn:{},enLoading:{},books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:''}};
+const S={en:{books:{},tags:{}},chEn:{},enLoading:{},books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},liked:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:''}};
 
 /* ---------- language ---------- */
 let UI=(()=>{try{return localStorage.getItem('bandu-ui')||''}catch(e){return ''}})()||'zh';
@@ -9,7 +9,7 @@ const L={
 zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导读抓重点，再回原书精读。',toc:'目录',guide:'导读',
   reading:'在读',done:'读完',fresh:'没开始',cont:'继续读',last:'上次：',tocLabel:'导读目录',search:'搜书名或作者',all:'全部',
   zhBooks:'中文',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
-  shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
+  shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、喜欢、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
   updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
   points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
   notePh:'写下你的想法、疑问，或想回头精读的段落…',prev:'上一章',next:'下一章',star:'收藏',unstar:'取消收藏',starredTitle:'收藏的表达',
@@ -20,11 +20,11 @@ zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导�
   pickT:'选择这本书的 epub 文件',pickP1:'文件只在这台设备上打开和保存，不会上传。',pickP2:'选过一次后，这台设备会记住它。',pickBtn:'选择 epub 文件',
   noTocT:'没在目录里自动找到这一章',noTocP:'请从下面选择对应的章节。',otherFile:'换一个 epub 文件',badCh:'这一章的文件打不开。',
   parsing:'正在解析 epub…',badEpub:'这个文件打不开，请确认是 epub 格式。',selFirst:'先长按选中一段原文',excerpted:'已摘录到本章笔记',excerpt:'摘录选中',
-  q:'问',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
+  q:'问',like:'♡ 喜欢',liked:'♥ 已喜欢',likeTip:'标记喜欢，之后回来细读',likedBtn:'♥ 喜欢的导读',likedTitle:'喜欢的导读',likedBooks:'喜欢的书',likedChs:'喜欢的章节',likedF:'♥ 喜欢',likeBook:'♡ 喜欢这本书',likedBook:'♥ 已喜欢这本书',noLikes:'还没有喜欢的导读。快速翻导读时，在章节页或目录里点 ♡ 标上，之后回这里细读。',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
 en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the guide for the key points, then go back to the book for a close read.',toc:'Contents',guide:'Guide',
   reading:'Reading',done:'Finished',fresh:'Not started',cont:'Continue reading',last:'Last: ',tocLabel:'Contents',search:'Search title or author',all:'All',
   zhBooks:'Chinese',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
-  shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
+  shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, likes, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
   updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
   points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
   notePh:'Write down thoughts, questions, or passages to come back to…',prev:'Previous',next:'Next',star:'Save',unstar:'Remove',starredTitle:'Saved expressions',
@@ -35,7 +35,7 @@ en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the 
   pickT:'Choose this book’s epub file',pickP1:'The file is opened and kept only on this device. It is never uploaded.',pickP2:'After the first time, this device remembers it.',pickBtn:'Choose epub file',
   noTocT:'Couldn’t find this chapter in the table of contents',noTocP:'Pick the matching chapter below.',otherFile:'Use a different epub file',badCh:'This chapter’s file can’t be opened.',
   parsing:'Reading the epub…',badEpub:'This file can’t be opened. Is it an epub?',selFirst:'Long-press to select a passage first',excerpted:'Saved to this chapter’s notes',excerpt:'Save selection',
-  q:'Q',switchTo:'中文',switchLabel:'切换到中文',untrans:'This guide hasn’t been translated yet, so it is shown in Chinese.',enCount:' in English'}};
+  q:'Q',like:'♡ Like',liked:'♥ Liked',likeTip:'Mark it to come back for a close read',likedBtn:'♥ Liked guides',likedTitle:'Liked guides',likedBooks:'Liked books',likedChs:'Liked chapters',likedF:'♥ Liked',likeBook:'♡ Like this book',likedBook:'♥ Liked this book',noLikes:'Nothing liked yet. While skimming guides, tap ♡ on a chapter page or in the contents, then come back here for a close read.',switchTo:'中文',switchLabel:'切换到中文',untrans:'This guide hasn’t been translated yet, so it is shown in Chinese.',enCount:' in English'}};
 const t=k=>(L[UI]&&L[UI][k]!==undefined?L[UI][k]:L.zh[k]);
 const EN=()=>UI==='en';
 function setUI(v){UI=v;try{localStorage.setItem('bandu-ui',v)}catch(e){}document.documentElement.lang=v==='en'?'en':'zh-CN';document.title=t('app');
@@ -100,10 +100,13 @@ function ensureChapters(bid){
 }
 
 /* ---------- progress (on this device) ---------- */
-function loadProg(){try{const p=JSON.parse(ls('bandu-prog')||'null');if(p)S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},recent:p.recent||{}}}catch(e){}
+function loadProg(){try{const p=JSON.parse(ls('bandu-prog')||'null');if(p)S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},liked:p.liked||{},recent:p.recent||{}}}catch(e){}
   try{const f=JSON.parse(ls('bandu-filter')||'null');if(f)S.f=Object.assign(S.f,f,{q:''})}catch(e){}}
 function saveProg(){ls('bandu-prog',JSON.stringify(S.prog));idbPut('prog-backup',JSON.stringify(S.prog))}
 function setStatus(cid,val){S.prog.status[cid]=S.prog.status[cid]===val?'':val;if(!S.prog.status[cid])delete S.prog.status[cid];saveProg();render()}
+function toggleLike(key){const l=S.prog.liked||(S.prog.liked={});if(l[key])delete l[key];else l[key]=Date.now();saveProg();render()}
+const isLiked=k=>!!(S.prog.liked||{})[k];
+const bookLiked=b=>isLiked(b.id)||(b.guided||[]).some(k=>isLiked(b.id+'-'+k));
 function toggleStar(key){if(S.prog.starred[key])delete S.prog.starred[key];else S.prog.starred[key]=true;saveProg();render()}
 let noteTimer=null;
 function noteInput(cid,val){S.prog.notes[cid]=val;const s=document.getElementById('saved');if(s)s.textContent=t('editing');
@@ -115,11 +118,12 @@ function backup(){
 }
 async function restore(file){
   try{const d=JSON.parse(await file.text());const p=d.progress||d;
-    if(!p||typeof p!=='object'||!('status' in p||'notes' in p||'starred' in p))throw 0;
+    if(!p||typeof p!=='object'||!('status' in p||'notes' in p||'starred' in p||'liked' in p))throw 0;
     S.prog.recent=S.prog.recent||{};for(const k in (p.recent||{})){if(!S.prog.recent[k]||S.prog.recent[k].t<p.recent[k].t)S.prog.recent[k]=p.recent[k]}
     /* merge: keep what is here, add what the backup has */
     S.prog.status=Object.assign({},p.status,S.prog.status);
     S.prog.starred=Object.assign({},p.starred,S.prog.starred);
+    S.prog.liked=Object.assign({},p.liked,S.prog.liked);
     for(const k in (p.notes||{})){const a=S.prog.notes[k],b=p.notes[k];S.prog.notes[k]=!a?b:(a===b||a.includes(b)?a:a+'\n\n'+b)}
     saveProg();render();toast(t('restored'));
   }catch(e){toast(t('badBackup'))}
@@ -157,7 +161,7 @@ function shelfList(){
   const list=S.books.filter(b=>{
     if(f.tag&&!(b.tags||[]).includes(f.tag))return false;
     if(f.lang&&b.lang!==f.lang)return false;
-    if(f.st&&bookState(b).st!==f.st)return false;
+    if(f.st==='liked'){if(!bookLiked(b))return false}else if(f.st&&bookState(b).st!==f.st)return false;
     if(q&&!(b.titleZh+' '+b.titleEn+' '+b.author+' '+bAuthor(b)+' '+(b.spine||'')).toLowerCase().includes(q))return false;
     return true;
   }).sort((a,c)=>rec(c)-rec(a)||(c.order||0)-(a.order||0));
@@ -165,7 +169,7 @@ function shelfList(){
   return list.map(b=>{const {guided,total,done,st}=bookState(b);
     const enN=EN()?(enB(b).guided||[]).length:0;
     return `<button class="book" data-go="b-${esc(b.id)}"><div class="spine${EN()?' sp-en':''}">${esc(bSpine(b))}</div><div class="bk">
-      <h2>${esc(bTitle(b))}</h2><div class="meta">${esc(bAuthor(b))}</div>
+      <h2>${esc(bTitle(b))}${bookLiked(b)?' <span class="lk">♥</span>':''}</h2><div class="meta">${esc(bAuthor(b))}</div>
       <div class="meta2"><span class="st st-${st}">${ST_LABEL[st]}</span>${(b.tags||[]).map(x=>`<span class="tg">${esc(tagName(x))}</span>`).join('')}<span class="cnt">${EN()&&enN<(b.guided||[]).length?`<span class="enn">${enN?enN+' EN · ':'中文 · '}</span>`:''}${done}/${total}</span></div>
       <div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('');
 }
@@ -187,10 +191,11 @@ function viewShelf(){
     const f=S.f;
     h+=`<div class="filters"><input id="shelfq" type="search" placeholder="${esc(t('search'))}" value="${esc(f.q)}" autocomplete="off">
       <div class="chips">${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
-      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}</div></div>`;
+      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}${chip('fst','liked',t('likedF'),f.st==='liked')}</div></div>`;
     h+=`<div class="books" id="booklist">${shelfList()}</div>`;
   }
-  if(starCount)h+=`<div class="actions" style="margin-top:24px"><button class="btn" data-go="starred">${esc(t('starredBtn'))} (${starCount})</button></div>`;
+  const likeCount=Object.keys(S.prog.liked||{}).length;
+  if(starCount||likeCount)h+=`<div class="actions" style="margin-top:24px">${likeCount?`<button class="btn" data-go="liked">${esc(t('likedBtn'))} (${likeCount})</button>`:''}${starCount?`<button class="btn" data-go="starred">${esc(t('starredBtn'))} (${starCount})</button>`:''}</div>`;
   h+=`<div class="shelf-foot">${esc(t('foot'))}${S.updated?`<br>${esc(t('updated'))}${esc(S.updated)}`:''}
     <div class="actions"><button class="btn" data-backup>${esc(t('backup'))}</button><button class="btn" data-restore>${esc(t('restore'))}</button></div></div>`;
   return h+'</div>';
@@ -203,6 +208,7 @@ function viewBook(bid){
   let h=bar('home',t('shelf'),bTitle(b),langBtn())+`<div class="view bookhead"><div class="eyebrow">${esc(bAuthor(b))}${b.year?' · '+esc(b.year):''}</div><h1>${esc(bTitle(b))}</h1><div class="${EN()?'zhsub':'en'}">${esc(bSub(b))}</div>`;
   if(EN()&&!enB(b).intro)h+=`<p class="untrans">${esc(t('untrans'))}</p>`;
   if(intro)h+=`<div class="md" style="margin-top:12px">${md(intro)}</div>`;
+  h+=`<div class="actions"><button class="btn likebtn" aria-pressed="${isLiked(b.id)}" data-like="${esc(b.id)}">${esc(isLiked(b.id)?t('likedBook'):t('likeBook'))}</button></div>`;
   h+='<ol class="toc">';
   const outline=b.outline&&b.outline.length?b.outline:chs.map(c=>({key:c.key,label:c.label,titleEn:c.titleEn,titleZh:c.titleZh}));
   const guided=new Set(b.guided||chs.map(c=>c.key));const enSet=new Set(enB(b).guided||[]);
@@ -211,7 +217,7 @@ function viewBook(bid){
     const st=has?S.prog.status[cid]:'';
     const pill=!has?`<span class="pill">${esc(t('pending'))}</span>`:st==='deep'?`<span class="pill deep">${esc(t('deep'))}</span>`:st==='read'?`<span class="pill read">${esc(t('read'))}</span>`:(EN()&&!enSet.has(o.key)?'<span class="pill">中文</span>':'');
     h+=`<li><button ${has?`data-go="c-${esc(cid)}"`:'disabled class="pending"'}><span class="no">${esc(lab(o.label))}</span>
-      <span class="t"><b>${esc(oTitle(o))}</b><span class="${EN()?'zhsub':''}">${esc(oSub(o))}</span>${c&&c.lede?`<small>${inline(c.lede)}</small>`:''}</span>${pill}</button></li>`;
+      <span class="t"><b>${esc(oTitle(o))}</b><span class="${EN()?'zhsub':''}">${esc(oSub(o))}</span>${c&&c.lede?`<small>${inline(c.lede)}</small>`:''}</span>${pill}</button>${has?`<button class="heart" aria-label="${esc(t('likeTip'))}" aria-pressed="${isLiked(cid)}" data-like="${esc(cid)}">${isLiked(cid)?'♥':'♡'}</button>`:''}</li>`;
   }
   return h+'</ol></div>';
 }
@@ -227,7 +233,8 @@ function viewChapter(cid){
   if(c.lede)h+=`<p class="lede">${inline(c.lede)}</p>`;
   h+=`<div class="actions"><button class="btn primary" data-go="r-${esc(cid)}">${esc(t('readOrig'))}</button>
     <button class="btn" aria-pressed="${st==='read'}" data-status="read" data-cid="${esc(cid)}">${esc(t('read'))}</button>
-    <button class="btn deepbtn" aria-pressed="${st==='deep'}" data-status="deep" data-cid="${esc(cid)}">${esc(t('deep'))}</button></div>`;
+    <button class="btn deepbtn" aria-pressed="${st==='deep'}" data-status="deep" data-cid="${esc(cid)}">${esc(t('deep'))}</button>
+    <button class="btn likebtn" aria-pressed="${isLiked(cid)}" data-like="${esc(cid)}" title="${esc(t('likeTip'))}">${esc(isLiked(cid)?t('liked'):t('like'))}</button></div>`;
   if(c.points&&c.points.length){h+=`<section class="block"><h2>${esc(t('points'))}</h2>`;
     c.points.forEach((p,k)=>{h+=`<div class="point"><h3><span class="n">${k+1}</span>${esc(p.h)}</h3><div class="md">${md(p.body)}</div></div>`});h+='</section>'}
   if(c.expressions&&c.expressions.length){h+=`<section class="block"><h2>${esc(t('exprs'))}</h2>`;
@@ -251,6 +258,21 @@ function viewStarred(){
     h+=`<div class="expr"><div><q>${esc(e.en)}</q><div class="zh md">${md(e.zh)}</div><div class="from">${esc(bTitle(b))} · ${esc(lab(c.label))} ${esc(oTitle(c))} · <a href="#c-${esc(c.id)}">${esc(t('toGuide'))}</a></div></div>
       <button class="star" aria-label="${esc(t('unstar'))}" aria-pressed="true" data-star="${esc(key)}">★</button></div>`}
   return h+'</div></div>';
+}
+function viewLiked(){
+  const L=S.prog.liked||{},keys=Object.keys(L).sort((a,c)=>L[c]-L[a]);
+  const bks=keys.filter(k=>bookOf(k)).map(bookOf),chk=keys.filter(k=>!bookOf(k));
+  for(const k of chk){const bid=bookIdOfCh(k);if(bid)ensureChapters(bid)}
+  let h=bar('home',t('shelf'),t('likedTitle'),langBtn())+`<div class="view"><h1 style="font-size:24px">${esc(t('likedTitle'))}</h1>`;
+  if(!keys.length)return h+`<div class="empty">${esc(t('noLikes'))}</div></div>`;
+  if(bks.length){h+=`<h2 class="sec">${esc(t('likedBooks'))}</h2><div class="books">`+bks.map(b=>`<button class="book" data-go="b-${esc(b.id)}"><div class="spine${EN()?' sp-en':''}">${esc(bSpine(b))}</div><div class="bk"><h2>${esc(bTitle(b))}</h2><div class="meta">${esc(bAuthor(b))}</div></div></button>`).join('')+'</div>'}
+  if(chk.length){h+=`<h2 class="sec">${esc(t('likedChs'))}</h2>`;
+    const groups=[];for(const k of chk){const bid=bookIdOfCh(k);if(!bid)continue;let g=groups.find(x=>x.bid===bid);if(!g)groups.push(g={bid,ks:[]});g.ks.push(k)}
+    for(const g of groups){const b=bookOf(g.bid);h+=`<div class="likegrp"><div class="eyebrow">${esc(bTitle(b))}</div><ol class="toc">`;
+      for(const k of g.ks){const c=cx(findCh(k));const o=c||((b.outline||[]).find(x=>g.bid+'-'+x.key===k))||{label:'',titleZh:k,titleEn:k};
+        h+=`<li><button data-go="c-${esc(k)}"><span class="no">${esc(lab(o.label))}</span><span class="t"><b>${esc(oTitle(o))}</b>${c&&c.lede?`<small>${inline(c.lede)}</small>`:''}</span>${S.prog.status[k]==='deep'?`<span class="pill deep">${esc(t('deep'))}</span>`:S.prog.status[k]==='read'?`<span class="pill read">${esc(t('read'))}</span>`:''}</button><button class="heart" aria-label="${esc(t('likeTip'))}" aria-pressed="true" data-like="${esc(k)}">♥</button></li>`}
+      h+='</ol></div>'}}
+  return h+'</div>';
 }
 function notFound(loading){return bar('home',t('shelf'),'')+`<div class="empty">${esc(loading||!S.loaded?t('loading'):t('notFound'))}</div>`}
 
@@ -373,6 +395,7 @@ function render(){
   else if(h.startsWith('c-'))html=viewChapter(h.slice(2));
   else if(h.startsWith('r-')){reader=h.slice(2);html=viewReader(reader)}
   else if(h==='starred')html=viewStarred();
+  else if(h==='liked')html=viewLiked();
   else html=viewShelf();
   if(reader&&render._reader===reader&&document.getElementById('reader'))return;
   const active=document.activeElement&&document.activeElement.id;
@@ -395,6 +418,7 @@ app.addEventListener('click',async e=>{
   if(t.dataset.ui){setUI(t.dataset.ui);return}
   if(t.dataset.status){setStatus(t.dataset.cid,t.dataset.status);return}
   if(t.dataset.star){toggleStar(t.dataset.star);return}
+  if(t.dataset.like){toggleLike(t.dataset.like);return}
   if(t.dataset.size){const n=Math.min(26,Math.max(14,+(ls('rsize')||18)+(+t.dataset.size)*2));ls('rsize',String(n));const r=document.getElementById('reader');if(r)r.style.setProperty('--rs',n+'px');return}
   if(t.dataset.tocpick!==undefined){const c=findCh(t.dataset.cid);const b=c&&S.epubs[c.bookId];if(b)await showHref(b,+t.dataset.tocpick,document.getElementById('reader'));return}
   for(const [k,a] of [['tag','ftag'],['lang','flang'],['st','fst']])if(t.dataset[a]!==undefined){const v=t.dataset[a];S.f[k]=(k!=='tag'&&S.f[k]===v)?'':v;ls('bandu-filter',JSON.stringify({tag:S.f.tag,lang:S.f.lang,st:S.f.st}));render();return}
@@ -417,7 +441,7 @@ app.addEventListener('change',async e=>{const inp=e.target;if(inp.id!=='epubfile
 loadProg();
 document.documentElement.lang=EN()?'en':'zh-CN';document.title=t('app');
 (async()=>{ /* if localStorage was cleared but IndexedDB survived, bring progress back */
-  if(!ls('bandu-prog')){const b=await idbGet('prog-backup');if(b){try{const p=JSON.parse(b);S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},recent:p.recent||{}};ls('bandu-prog',b);render()}catch(e){}}}
+  if(!ls('bandu-prog')){const b=await idbGet('prog-backup');if(b){try{const p=JSON.parse(b);S.prog={status:p.status||{},notes:p.notes||{},starred:p.starred||{},liked:p.liked||{},recent:p.recent||{}};ls('bandu-prog',b);render()}catch(e){}}}
 })();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 render();
