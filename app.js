@@ -12,7 +12,7 @@ zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导�
   shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、喜欢、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
   updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
   points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
-  notePh:'写下你的想法、疑问，或想回头精读的段落…',prev:'上一章',next:'下一章',star:'收藏',unstar:'取消收藏',starredTitle:'收藏的表达',
+  notePh:'写下你的想法、疑问，或想回头精读的段落…',prev:'上一章',next:'下一章',contHere:'继续：',star:'收藏',unstar:'取消收藏',starredTitle:'收藏的表达',
   noStars:'还没有收藏。在章节导读里点 ☆ 收藏。',toGuide:'去导读',notFound:'找不到这一页。',editing:'编辑中…',savedHere:'已保存在这台设备上',
   backupName:'伴读书房-进度-',restored:'已恢复备份',badBackup:'这个文件不是伴读书房的备份',offline:'没有网络，这本书的导读还没存到本机',
   installT:'装到手机主屏幕',installIos:'在 Safari 里点底部的「分享」按钮，选「添加到主屏幕」。',installOther:'在浏览器菜单里选「安装应用」或「添加到主屏幕」。',
@@ -27,7 +27,7 @@ en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the 
   shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, likes, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
   updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
   points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
-  notePh:'Write down thoughts, questions, or passages to come back to…',prev:'Previous',next:'Next',star:'Save',unstar:'Remove',starredTitle:'Saved expressions',
+  notePh:'Write down thoughts, questions, or passages to come back to…',prev:'Previous',next:'Next',contHere:'Continue: ',star:'Save',unstar:'Remove',starredTitle:'Saved expressions',
   noStars:'Nothing saved yet. Tap ☆ next to an expression in a chapter guide.',toGuide:'Open guide',notFound:'Page not found.',editing:'Editing…',savedHere:'Saved on this device',
   backupName:'bandu-progress-',restored:'Backup restored',badBackup:'This file is not a Bandu backup',offline:'Offline: this book’s guides are not saved on this device yet',
   installT:'Add to your home screen',installIos:'In Safari, tap Share at the bottom and choose “Add to Home Screen”.',installOther:'In the browser menu, choose “Install app” or “Add to Home screen”.',
@@ -191,7 +191,7 @@ function viewShelf(){
     const f=S.f;
     h+=`<div class="filters"><input id="shelfq" type="search" placeholder="${esc(t('search'))}" value="${esc(f.q)}" autocomplete="off">
       <div class="chips">${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
-      <div class="chips">${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}<span class="sep"></span>${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}${chip('fst','liked',t('likedF'),f.st==='liked')}</div></div>`;
+      <div class="chips">${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','liked',t('likedF'),f.st==='liked')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}<span class="sep"></span>${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}</div></div>`;
     h+=`<div class="books" id="booklist">${shelfList()}</div>`;
   }
   const likeCount=Object.keys(S.prog.liked||{}).length;
@@ -208,7 +208,8 @@ function viewBook(bid){
   let h=bar('home',t('shelf'),bTitle(b),langBtn())+`<div class="view bookhead"><div class="eyebrow">${esc(bAuthor(b))}${b.year?' · '+esc(b.year):''}</div><h1>${esc(bTitle(b))}</h1><div class="${EN()?'zhsub':'en'}">${esc(bSub(b))}</div>`;
   if(EN()&&!enB(b).intro)h+=`<p class="untrans">${esc(t('untrans'))}</p>`;
   if(intro)h+=`<div class="md" style="margin-top:12px">${md(intro)}</div>`;
-  h+=`<div class="actions"><button class="btn likebtn" aria-pressed="${isLiked(b.id)}" data-like="${esc(b.id)}">${esc(isLiked(b.id)?t('likedBook'):t('likeBook'))}</button></div>`;
+  const rcid=(S.prog.recent[b.id]||{}).cid,rc=rcid&&findCh(rcid);
+  h+=`<div class="actions">${rc?`<button class="btn primary contbtn" data-go="c-${esc(rcid)}">${esc(t('contHere'))}${esc(lab(rc.label))}</button>`:''}<button class="btn likebtn" aria-pressed="${isLiked(b.id)}" data-like="${esc(b.id)}">${esc(isLiked(b.id)?t('likedBook'):t('likeBook'))}</button></div>`;
   h+='<ol class="toc">';
   const outline=b.outline&&b.outline.length?b.outline:chs.map(c=>({key:c.key,label:c.label,titleEn:c.titleEn,titleZh:c.titleZh}));
   const guided=new Set(b.guided||chs.map(c=>c.key));const enSet=new Set(enB(b).guided||[]);
@@ -216,7 +217,7 @@ function viewBook(bid){
     const c=cx(chs.find(x=>x.key===o.key)),has=guided.has(o.key),cid=b.id+'-'+o.key;
     const st=has?S.prog.status[cid]:'';
     const pill=!has?`<span class="pill">${esc(t('pending'))}</span>`:st==='deep'?`<span class="pill deep">${esc(t('deep'))}</span>`:st==='read'?`<span class="pill read">${esc(t('read'))}</span>`:(EN()&&!enSet.has(o.key)?'<span class="pill">中文</span>':'');
-    h+=`<li><button ${has?`data-go="c-${esc(cid)}"`:'disabled class="pending"'}><span class="no">${esc(lab(o.label))}</span>
+    h+=`<li${cid===rcid?' class="here"':''} data-cid="${esc(cid)}"><button ${has?`data-go="c-${esc(cid)}"`:'disabled class="pending"'}><span class="no">${esc(lab(o.label))}</span>
       <span class="t"><b>${esc(oTitle(o))}</b><span class="${EN()?'zhsub':''}">${esc(oSub(o))}</span>${c&&c.lede?`<small>${inline(c.lede)}</small>`:''}</span>${pill}</button>${has?`<button class="heart" aria-label="${esc(t('likeTip'))}" aria-pressed="${isLiked(cid)}" data-like="${esc(cid)}">${isLiked(cid)?'♥':'♡'}</button>`:''}</li>`;
   }
   return h+'</ol></div>';
@@ -246,6 +247,12 @@ function viewChapter(cid){
     <textarea id="note-${esc(cid)}" data-note="${esc(cid)}" placeholder="${esc(t('notePh'))}">${esc(S.prog.notes[cid]||'')}</textarea><div class="saved" id="saved"></div></section>`;
   h+=`<div class="pager"><button ${prev?`data-go="c-${esc(prev.id)}"`:'disabled'}><small>${esc(t('prev'))}</small>${prev?esc(oTitle(prev)):''}</button>
     <button ${next?`data-go="c-${esc(next.id)}"`:'disabled'}><small>${esc(t('next'))}</small>${next?esc(oTitle(next)):''}</button></div>`;
+  h+=`<nav class="dock" aria-label="${esc(t('toc'))}">
+    <button class="dk" ${prev?`data-go="c-${esc(prev.id)}"`:'disabled'} aria-label="${esc(t('prev'))}">‹</button>
+    <button class="dk dk-toc" data-go="b-${esc(bid)}">${esc(t('toc'))}</button>
+    <button class="dk dk-read" data-go="r-${esc(cid)}">${esc(t('readOrig'))}</button>
+    <button class="dk dk-like" aria-pressed="${isLiked(cid)}" data-like="${esc(cid)}" aria-label="${esc(t('likeTip'))}">${isLiked(cid)?'♥':'♡'}</button>
+    <button class="dk" ${next?`data-go="c-${esc(next.id)}"`:'disabled'} aria-label="${esc(t('next'))}">›</button></nav>`;
   return h+'</div>';
 }
 function viewStarred(){
@@ -404,14 +411,38 @@ function render(){
   if(active){const el=document.getElementById(active);if(el&&el.tagName==='TEXTAREA'){el.focus();el.selectionStart=el.selectionEnd=el.value.length}}
   if(render._reader){lastSel='';fillReader(reader)}
 }
-function go(g){
-  if(g==='home'){history.pushState(null,'',location.pathname+location.search);render._reader=null;render()}
-  else if(location.hash==='#'+g){render._reader=null;render()}
-  else location.hash=g;
+/* scroll memory: return to where you were on the shelf and in a book's contents */
+const POS={};let curHash=location.hash;
+window.addEventListener('scroll',()=>{POS[curHash]=window.scrollY},{passive:true});
+function placeScroll(from){
+  const h=location.hash;curHash=h;
+  if(h.startsWith('#b-')){
+    const f=decodeURIComponent(from||'');
+    const li=(f.startsWith('#c-')||f.startsWith('#r-'))&&document.querySelector(`.toc li[data-cid="${CSS.escape(f.slice(3))}"]`);
+    if(li){li.scrollIntoView({block:'center'});return}
+    if(POS[h]!=null){window.scrollTo(0,POS[h]);return}
+  }
+  if(!h&&POS['']!=null){window.scrollTo(0,POS['']);return}
   window.scrollTo(0,0);
 }
-window.addEventListener('hashchange',()=>{S.chFail={};render._reader=null;render();window.scrollTo(0,0)});
-window.addEventListener('popstate',()=>{if(!location.hash){render._reader=null;render()}});
+function go(g){
+  const from=curHash;
+  if(g==='home'){history.pushState(null,'',location.pathname+location.search);render._reader=null;render();placeScroll(from)}
+  else if(location.hash==='#'+g){render._reader=null;render();window.scrollTo(0,0)}
+  else location.hash=g;
+}
+window.addEventListener('hashchange',()=>{const from=curHash;S.chFail={};render._reader=null;render();placeScroll(from)});
+window.addEventListener('popstate',()=>{if(!location.hash){const from=curHash;render._reader=null;render();placeScroll(from)}});
+/* swipe between sections on a chapter guide */
+(()=>{let x0=null,y0=0,t0=0;
+  document.addEventListener('touchstart',e=>{const tc=e.touches[0];
+    if(e.touches.length!==1||!location.hash.startsWith('#c-')||tc.clientX<28||tc.clientX>innerWidth-28||e.target.closest('textarea,input,.dock')){x0=null;return}
+    x0=tc.clientX;y0=tc.clientY;t0=Date.now()},{passive:true});
+  document.addEventListener('touchend',e=>{if(x0==null)return;const tc=e.changedTouches[0],dx=tc.clientX-x0,dy=tc.clientY-y0;x0=null;
+    if(Date.now()-t0>600||Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.5||String(getSelection()||'').trim())return;
+    const b=document.querySelector(dx<0?'.dock .dk:last-child':'.dock .dk:first-child');
+    if(b&&b.dataset.go)go(b.dataset.go)},{passive:true});
+})();
 app.addEventListener('click',async e=>{
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.go!==undefined){go(t.dataset.go);return}
