@@ -486,5 +486,18 @@ document.documentElement.lang=EN()?'en':'zh-CN';document.title=t('app');
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 render();
 loadShelf();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* keep the installed app current: check for a new version on every launch / return to the app,
+   and reload once when it takes over */
+if('serviceWorker' in navigator){
+  const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!hadCtl||reloaded)return;reloaded=true;
+    const ta=document.activeElement&&document.activeElement.tagName==='TEXTAREA';
+    if(ta)return;location.reload();
+  });
+}
 })();

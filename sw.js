@@ -2,12 +2,13 @@
    App shell: cache first (bump VERSION to ship a new shell).
    data/*: network first, falling back to cache, so new guides show up when online
    and everything already opened still works offline. */
-const VERSION = 'bandu-v12';
+const VERSION = 'bandu-v13';
 const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'vendor/jszip.min.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'data/books.json'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache:'reload' skips the browser HTTP cache, so a new version never re-caches old files
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: 'reload'})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
