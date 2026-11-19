@@ -353,6 +353,8 @@ function viewReader(cid){
     `<div class="view"><div id="reader" style="--rs:${size}px"><div class="empty">${esc(t('opening'))}</div></div></div><button class="excerpt" id="excerpt" data-excerpt="${esc(cid)}" hidden>${esc(t('excerpt'))}</button>`;
 }
 function filePicker(c,cid,label,primary){return `<label class="btn${primary?' primary':''}" for="epubfile">${label}</label><input type="file" id="epubfile" accept=".epub,application/epub+zip" data-book="${esc(c.bookId)}" data-cid="${esc(cid)}">`}
+/* match a guide's href to a spine path: exact or on a path boundary first (so r14.html never hits r114.html), plain suffix as a fallback */
+const spFind=(sp,h)=>sp.find(x=>x===h||x.endsWith('/'+h))||sp.find(x=>x.endsWith(h));
 async function fillReader(cid){
   const c=findCh(cid);const box=document.getElementById('reader');if(!c||!box)return;
   let book=S.epubs[c.bookId];
@@ -360,9 +362,9 @@ async function fillReader(cid){
   if(!document.getElementById('reader'))return;
   if(!book){box.innerHTML=`<div class="loadbox"><b>${esc(t('pickT'))}</b><p>${esc(t('pickP1'))}</p><p>${esc(t('pickP2'))}</p>${filePicker(c,cid,esc(t('pickBtn')),true)}</div>`;return}
   /* a guide covering several whole chapters, each in its own spine file */
-  if(c.epubHrefs&&c.epubHrefs.length){const sp=book.spine||[],hs=c.epubHrefs.map(h=>sp.find(x=>x.endsWith(h))).filter(Boolean);if(hs.length){await showHref(book,-1,box,hs);return}}
+  if(c.epubHrefs&&c.epubHrefs.length){const sp=book.spine||[],hs=c.epubHrefs.map(h=>spFind(sp,h)).filter(Boolean);if(hs.length){await showHref(book,-1,box,hs);return}}
   if(c.epubStart&&c.epubHref&&await showSpan(book,c,box))return;
-  if(c.epubHref){const h=(book.spine||[]).find(x=>x.endsWith(c.epubHref));if(h){await showHref(book,-1,box,[h]);return}}
+  if(c.epubHref){const h=spFind(book.spine||[],c.epubHref);if(h){await showHref(book,-1,box,[h]);return}}
   const want=(c.epubLabel||c.titleEn||'').toLowerCase();
   const hit=book.toc.find(t=>t.label.toLowerCase()===want)||book.toc.find(t=>want&&t.label.toLowerCase().includes(want));
   if(!hit){box.innerHTML=`<div class="loadbox"><b>${esc(t('noTocT'))}</b><p>${esc(t('noTocP'))}</p><ul class="toclist">${book.toc.map((t,k)=>`<li><button data-tocpick="${k}" data-cid="${esc(cid)}">${esc(t.label)}</button></li>`).join('')}</ul>
@@ -383,7 +385,7 @@ const normText=n=>(n.textContent||'').replace(/\s+/g,' ').trim();
 /* some epubs wrap a whole part in one <div>: open such wrappers so the cut works paragraph by paragraph */
 const flatKids=n=>[...n.childNodes].flatMap(k=>k.nodeType===1&&k.tagName==='DIV'&&k.querySelector('p')?flatKids(k):[k]);
 async function showSpan(book,c,box){
-  const sp=book.spine||[];let i=sp.findIndex(x=>x.endsWith(c.epubHref));if(i<0)return false;
+  const sp=book.spine||[];let i=sp.indexOf(spFind(sp,c.epubHref));if(i<0)return false;
   const start=c.epubStart.replace(/\s+/g,' ').trim(),end=c.epubEnd?c.epubEnd.replace(/\s+/g,' ').trim():'';
   const node=document.createElement('div');let started=false,done=false;
   for(let n=0;i<sp.length&&!done&&n<16;i++,n++){
