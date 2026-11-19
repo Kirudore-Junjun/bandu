@@ -204,7 +204,7 @@ function viewShelf(){
   h+=installTip();
   if(!S.books.length){h+=`<div class="empty">${esc(S.failed?t('shelfFail'):S.loaded?t('shelfEmpty'):t('loading'))}</div>`}
   else{
-    const recent=S.books.filter(b=>S.prog.recent[b.id]).sort((a,c)=>S.prog.recent[c.id].t-S.prog.recent[a.id].t).slice(0,3);
+    const recent=S.books.filter(b=>S.prog.recent[b.id]).sort((a,c)=>S.prog.recent[c.id].t-S.prog.recent[a.id].t).slice(0,1);
     if(recent.length){
       h+=`<h2 class="sec">${esc(t('cont'))}</h2><div class="cont">`+recent.map(b=>{const r=S.prog.recent[b.id];const {done,total}=bookState(b);
         const rc=r.cid&&findCh(r.cid);const chl=rc?(rc.label&&rc.label!==rc.titleZh?lab(rc.label)+' · ':'')+oTitle(rc):r.ch;
