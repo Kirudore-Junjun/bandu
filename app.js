@@ -386,7 +386,7 @@ async function showSpan(book,c,box){
   const sp=book.spine||[];let i=sp.findIndex(x=>x.endsWith(c.epubHref));if(i<0)return false;
   const start=c.epubStart.replace(/\s+/g,' ').trim(),end=c.epubEnd?c.epubEnd.replace(/\s+/g,' ').trim():'';
   const node=document.createElement('div');let started=false,done=false;
-  for(let n=0;i<sp.length&&!done&&n<4;i++,n++){
+  for(let n=0;i<sp.length&&!done&&n<16;i++,n++){
     const part=await chapterHtml(book,sp[i]);if(!part)continue;
     const kids=flatKids(part);
     for(let k=0;k<kids.length;k++){
