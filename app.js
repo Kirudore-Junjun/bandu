@@ -8,7 +8,7 @@ let UI=(()=>{try{return localStorage.getItem('bandu-ui')||''}catch(e){return ''}
 const L={
 zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导读抓重点，再回原书精读。',toc:'目录',guide:'导读',
   reading:'在读',done:'读完',fresh:'没开始',cont:'继续读',last:'上次：',tocLabel:'导读目录',search:'搜书名或作者',all:'全部',
-  zhBooks:'中文',nBooks:'共 %n 本',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
+  zhBooks:'中文',nBooks:'共 %n 本',nBooks2:'%n 本书',cats:'分类',vGrid:'封面',vList:'列表',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
   shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、喜欢、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
   updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
   points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
@@ -23,7 +23,7 @@ zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导�
   q:'问',like:'♡ 喜欢',liked:'♥ 已喜欢',likeTip:'标记喜欢，之后回来细读',likedBtn:'♥ 喜欢的导读',likedTitle:'喜欢的导读',likedBooks:'喜欢的书',likedChs:'喜欢的章节',likedF:'♥ 喜欢',likeBook:'♡ 喜欢这本书',likedBook:'♥ 已喜欢这本书',noLikes:'还没有喜欢的导读。快速翻导读时，在章节页或目录里点 ♡ 标上，之后回这里细读。',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
 en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the guide for the key points, then go back to the book for a close read.',toc:'Contents',guide:'Guide',
   reading:'Reading',done:'Finished',fresh:'Not started',cont:'Continue reading',last:'Last: ',tocLabel:'Contents',search:'Search title or author',all:'All',
-  zhBooks:'Chinese',nBooks:'%n books',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
+  zhBooks:'Chinese',nBooks:'%n books',nBooks2:'%n books',cats:'Categories',vGrid:'Covers',vList:'List',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
   shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, likes, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
   updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
   points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
@@ -165,11 +165,28 @@ function shelfList(){
     if(q&&!(b.titleZh+' '+b.titleEn+' '+b.author+' '+bAuthor(b)+' '+(b.spine||'')).toLowerCase().includes(q))return false;
     return true;
   }).sort((a,c)=>rec(c)-rec(a)||(c.order||0)-(a.order||0));
+  if(S.f.view==='cat'&&!q){
+    if(!f.tag)return catStacks(list);
+    return `<div class="catbar"><button class="back" data-cat="">‹ ${esc(t('cats'))}</button><b>${esc(tagName(f.tag))}</b><span>${esc(t('nBooks2').replace('%n',list.length))}</span></div>`+(list.length?`<div class="books grid">${coverCards(list)}</div>`:`<div class="empty">${esc(t('noMatch'))}</div>`);
+  }
   if(!list.length)return `<div class="empty">${esc(t('noMatch'))}</div>`;
-  if(S.f.view!=='list')return list.map(b=>{const {total,done,st}=bookState(b);const pc=total?Math.round(done/total*100):0;
-    return `<button class="cover" data-go="b-${esc(b.id)}" style="--cv:${coverColor(b)}" aria-label="${esc(bTitle(b))}">
-      <span class="cv${EN()?' cv-en':''}"><b>${esc(bTitle(b))}</b><i>${esc((bAuthor(b)||'').replace(/^[A-Za-z .,'’\-]+(?=[\u4e00-\u9fff])/,'').trim()||bAuthor(b))}</i>${bookLiked(b)?'<em>♥</em>':''}${st!=='new'?`<s class="cvst cvst-${st}">${esc(ST_LABEL[st])}</s>`:''}</span>
-      <span class="cvm"><i style="width:${pc}%"></i></span></button>`}).join('');
+  if(S.f.view!=='list')return `<div class="books grid">${coverCards(list)}</div>`;
+  return `<div class="books">${listCards(list)}</div>`;
+}
+function coverCard(b,cls=''){const {total,done,st}=bookState(b);const pc=total?Math.round(done/total*100):0;
+  return `<span class="cv${EN()?' cv-en':''}${cls}" style="--cv:${coverColor(b)}"><b>${esc(bTitle(b))}</b><i>${esc(shortAuthor(b))}</i>${bookLiked(b)?'<em>♥</em>':''}${st!=='new'&&!cls?`<s class="cvst cvst-${st}">${esc(ST_LABEL[st])}</s>`:''}</span>`}
+const shortAuthor=b=>(bAuthor(b)||'').replace(/^[A-Za-z .,'’\-]+(?=[\u4e00-\u9fff])/,'').trim()||bAuthor(b);
+function catStacks(list){
+  const tags=S.tags.length?S.tags:[...new Set(S.books.flatMap(b=>b.tags||[]))];
+  const out=tags.map(x=>{const bs=list.filter(b=>(b.tags||[]).includes(x));if(!bs.length)return '';
+    const [a,b2,c]=bs;
+    return `<button class="stack" data-cat="${esc(x)}"><span class="stk">${c?coverCard(c,' stk-r'):''}${b2?coverCard(b2,' stk-l'):''}${coverCard(a,' stk-f')}</span>
+      <b>${esc(tagName(x))}</b><span class="stn">${esc(t('nBooks2').replace('%n',bs.length))}</span></button>`}).join('');
+  return out?`<div class="cats">${out}</div>`:`<div class="empty">${esc(t('noMatch'))}</div>`;
+}
+function coverCards(list){return list.map(b=>{const {total,done}=bookState(b);const pc=total?Math.round(done/total*100):0;
+    return `<button class="cover" data-go="b-${esc(b.id)}" aria-label="${esc(bTitle(b))}">${coverCard(b)}<span class="cvm"><i style="width:${pc}%"></i></span></button>`}).join('')}
+function listCards(list){
   return list.map(b=>{const {guided,total,done,st}=bookState(b);
     const enN=EN()?(enB(b).guided||[]).length:0;
     return `<button class="book" data-go="b-${esc(b.id)}"><div class="spine${EN()?' sp-en':''}">${esc(bSpine(b))}</div><div class="bk">
@@ -197,10 +214,11 @@ function viewShelf(){
     const tags=S.tags.length?S.tags:[...new Set(S.books.flatMap(b=>b.tags||[]))];
     const f=S.f;
     h+=`<div class="filters"><input id="shelfq" type="search" placeholder="${esc(t('search'))}" value="${esc(f.q)}" autocomplete="off">
-      <div class="chips">${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
+      <div class="chips"${f.view==='cat'?' hidden':''}>${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
       <div class="chips">${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','liked',t('likedF'),f.st==='liked')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}<span class="sep"></span>${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}</div></div>`;
-    h+=`<div class="shelfbar"><span>${esc(t('nBooks').replace('%n',S.books.length))}</span><span class="vt"><button class="chipbtn" data-view="grid" aria-pressed="${S.f.view!=='list'}" aria-label="grid">▦</button><button class="chipbtn" data-view="list" aria-pressed="${S.f.view==='list'}" aria-label="list">☰</button></span></div>`;
-    h+=`<div class="books${S.f.view!=='list'?' grid':''}" id="booklist">${shelfList()}</div>`;
+    const V=S.f.view||'grid';
+    h+=`<div class="shelfbar"><span>${esc(t('nBooks').replace('%n',S.books.length))}</span><span class="seg">${[['grid',t('vGrid')],['list',t('vList')],['cat',t('cats')]].map(([v,l])=>`<button data-view="${v}" aria-pressed="${V===v}">${esc(l)}</button>`).join('')}</span></div>`;
+    h+=`<div id="booklist">${shelfList()}</div>`;
   }
   const likeCount=Object.keys(S.prog.liked||{}).length;
   if(starCount||likeCount)h+=`<div class="actions" style="margin-top:24px">${likeCount?`<button class="btn" data-go="liked">${esc(t('likedBtn'))} (${likeCount})</button>`:''}${starCount?`<button class="btn" data-go="starred">${esc(t('starredBtn'))} (${starCount})</button>`:''}</div>`;
@@ -461,7 +479,8 @@ app.addEventListener('click',async e=>{
   if(t.dataset.size){const n=Math.min(26,Math.max(14,+(ls('rsize')||18)+(+t.dataset.size)*2));ls('rsize',String(n));const r=document.getElementById('reader');if(r)r.style.setProperty('--rs',n+'px');return}
   if(t.dataset.tocpick!==undefined){const c=findCh(t.dataset.cid);const b=c&&S.epubs[c.bookId];if(b)await showHref(b,+t.dataset.tocpick,document.getElementById('reader'));return}
   for(const [k,a] of [['tag','ftag'],['lang','flang'],['st','fst']])if(t.dataset[a]!==undefined){const v=t.dataset[a];S.f[k]=(k!=='tag'&&S.f[k]===v)?'':v;saveF();render();return}
-  if(t.dataset.view){S.f.view=t.dataset.view;saveF();render();return}
+  if(t.dataset.view){S.f.view=t.dataset.view;if(S.f.view==='cat')S.f.tag='';saveF();render();return}
+  if(t.dataset.cat!==undefined){S.f.tag=t.dataset.cat;saveF();render();const l=document.getElementById('booklist');if(l)l.scrollIntoView({block:'start'});return}
   if(t.dataset.backup!==undefined){backup();return}
   if(t.dataset.restore!==undefined){document.getElementById('restorefile').click();return}
   if(t.dataset.tipoff!==undefined){ls('bandu-tip','off');render();return}
