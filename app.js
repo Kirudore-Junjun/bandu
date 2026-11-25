@@ -1,14 +1,14 @@
 (function(){
 'use strict';
 const app=document.getElementById('app');
-const S={en:{books:{},tags:{}},chEn:{},enLoading:{},books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},liked:{},recent:{}},updated:'',tags:[],f:{tag:'',lang:'',st:'',q:'',view:'grid'}};
+const S={en:{books:{},tags:{}},chEn:{},enLoading:{},books:[],chapters:{},loading:{},chFail:{},loaded:false,failed:false,epubs:{},prog:{status:{},notes:{},starred:{},liked:{},recent:{}},updated:'',tags:[],f:{tag:'',au:'',lang:'',st:'',q:'',view:'grid'}};
 
 /* ---------- language ---------- */
 let UI=(()=>{try{return localStorage.getItem('bandu-ui')||''}catch(e){return ''}})()||'zh';
 const L={
 zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导读抓重点，再回原书精读。',toc:'目录',guide:'导读',
   reading:'在读',done:'读完',fresh:'没开始',cont:'继续读',last:'上次：',tocLabel:'导读目录',search:'搜书名或作者',all:'全部',
-  zhBooks:'中文',nBooks:'共 %n 本',nBooks2:'%n 本书',cats:'分类',vGrid:'封面',vList:'列表',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
+  zhBooks:'中文',nBooks:'共 %n 本',nBooks2:'%n 本书',cats:'分类',vAuthor:'作者',auMulti:'多部作品',auOne:'其他作者',vGrid:'封面',vList:'列表',enBooks:'English',nlBooks:'荷兰语',esBooks:'西班牙语',noMatch:'没有符合条件的书。',shelfFail:'书架数据暂时打不开。第一次使用需要联网，请稍后刷新。',
   shelfEmpty:'书架还是空的。',loading:'加载中…',starredBtn:'★ 收藏的表达',foot:'已读、喜欢、收藏和笔记保存在这台设备上。换手机或清理浏览器数据前，先备份一下。',
   updated:'导读更新于 ',backup:'备份我的进度',restore:'从备份恢复',pending:'待导读',deep:'想精读',read:'已读',readOrig:'读原文',
   points:'重点',exprs:'有趣的表达',think:'想一想',myQs:'我的提问',myNotes:'我的笔记',noteTip:'读原文时选中句子，点「摘录选中」也会存到这里。',
@@ -23,7 +23,7 @@ zh:{app:'伴读书房',shelf:'书架',myShelf:'我的书架',tagline:'先看导�
   q:'问',like:'♡ 喜欢',liked:'♥ 已喜欢',likeTip:'标记喜欢，之后回来细读',likedBtn:'♥ 喜欢的导读',likedTitle:'喜欢的导读',likedBooks:'喜欢的书',likedChs:'喜欢的章节',likedF:'♥ 喜欢',likeBook:'♡ 喜欢这本书',likedBook:'♥ 已喜欢这本书',noLikes:'还没有喜欢的导读。快速翻导读时，在章节页或目录里点 ♡ 标上，之后回这里细读。',switchTo:'EN',switchLabel:'Switch to English',untrans:'',enCount:''},
 en:{app:'Bandu Reading Room',shelf:'Shelf',myShelf:'My Shelf',tagline:'Read the guide for the key points, then go back to the book for a close read.',toc:'Contents',guide:'Guide',
   reading:'Reading',done:'Finished',fresh:'Not started',cont:'Continue reading',last:'Last: ',tocLabel:'Contents',search:'Search title or author',all:'All',
-  zhBooks:'Chinese',nBooks:'%n books',nBooks2:'%n books',cats:'Categories',vGrid:'Covers',vList:'List',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
+  zhBooks:'Chinese',nBooks:'%n books',nBooks2:'%n books',cats:'Categories',vAuthor:'Authors',auMulti:'Several books',auOne:'Other authors',vGrid:'Covers',vList:'List',enBooks:'English',nlBooks:'Dutch',esBooks:'Spanish',noMatch:'No books match.',shelfFail:'Could not load the shelf. The first visit needs a connection; please refresh later.',
   shelfEmpty:'The shelf is empty.',loading:'Loading…',starredBtn:'★ Saved expressions',foot:'Reading marks, likes, saved expressions and notes live on this device. Back them up before switching phones or clearing browser data.',
   updated:'Guides updated ',backup:'Back up my progress',restore:'Restore from backup',pending:'Coming',deep:'Close read',read:'Read',readOrig:'Read the original',
   points:'Key points',exprs:'Interesting expressions',think:'Questions to think about',myQs:'My questions',myNotes:'My notes',noteTip:'Select a passage in the original and tap “Save selection” to add it here.',
@@ -169,6 +169,11 @@ function shelfList(){
     if(!f.tag)return catStacks(list);
     return `<div class="catbar"><button class="back" data-cat="">‹ ${esc(t('cats'))}</button><b>${esc(tagName(f.tag))}</b><span>${esc(t('nBooks2').replace('%n',list.length))}</span></div>`+(list.length?`<div class="books grid">${coverCards(list)}</div>`:`<div class="empty">${esc(t('noMatch'))}</div>`);
   }
+  if(S.f.view==='author'&&!q){
+    if(!f.au)return authorStacks(list);
+    const bs=list.filter(b=>auKey(b)===f.au),all=S.books.filter(b=>auKey(b)===f.au);
+    return `<div class="catbar"><button class="back" data-au="">‹ ${esc(t('vAuthor'))}</button><b>${esc(all.length?auGroupName(all):'')}</b><span>${esc(t('nBooks2').replace('%n',bs.length))}</span></div>`+(bs.length?`<div class="books grid">${coverCards(bs)}</div>`:`<div class="empty">${esc(t('noMatch'))}</div>`);
+  }
   if(!list.length)return `<div class="empty">${esc(t('noMatch'))}</div>`;
   if(S.f.view!=='list')return `<div class="books grid">${coverCards(list)}</div>`;
   return `<div class="books">${listCards(list)}</div>`;
@@ -184,6 +189,28 @@ function catStacks(list){
       <b>${esc(tagName(x))}</b><span class="stn">${esc(t('nBooks2').replace('%n',bs.length))}</span></button>`}).join('');
   return out?`<div class="cats">${out}</div>`:`<div class="empty">${esc(t('noMatch'))}</div>`;
 }
+// 作者分组：authorKey 字段可手动合并同一作者的不同写法
+function auSplit(s){s=String(s||'').split(' · ')[0].replace(/\(ed\.\)/g,'').replace(/\s*等$/,'').trim();
+  const la=((s.match(/[A-Za-z][A-Za-z\u00C0-\u024F .'’\-]*[A-Za-z\u00C0-\u024F.]/)||[''])[0]).trim();
+  const zh=(la?s.replace(la,''):s).replace(/\s+/g,' ').trim();return {la,zh:zh||la}}
+const auKey=b=>b.authorKey||(auSplit(b.author).la||auSplit(b.author).zh).toLowerCase();
+const auName=b=>{if(!EN())return auSplit(b.author).zh;const e=auSplit(enB(b).author||b.author);return e.la||e.zh};
+const auGroupName=bs=>auName(bs.reduce((a,c)=>(c.order||0)<(a.order||0)?c:a));
+function authorStacks(list){
+  const m=new Map();for(const b of list){const k=auKey(b);if(!m.has(k))m.set(k,[]);m.get(k).push(b)}
+  let col;try{col=new Intl.Collator(EN()?'en':'zh-Hans-CN-u-co-pinyin')}catch(e){col=new Intl.Collator()}
+  const gs=[...m].map(([k,bs])=>({k,bs,name:auGroupName(bs)}));
+  if(!gs.length)return `<div class="empty">${esc(t('noMatch'))}</div>`;
+  const multi=gs.filter(g=>g.bs.length>1).sort((a,b)=>b.bs.length-a.bs.length||col.compare(a.name,b.name));
+  const one=gs.filter(g=>g.bs.length===1).sort((a,b)=>col.compare(a.name,b.name));
+  let h='';
+  if(multi.length)h+=`<h2 class="sec">${esc(t('auMulti'))}</h2><div class="cats">`+multi.map(g=>{const [a,b2,c]=g.bs;
+    return `<button class="stack" data-au="${esc(g.k)}"><span class="stk">${c?coverCard(c,' stk-r'):''}${b2?coverCard(b2,' stk-l'):''}${coverCard(a,' stk-f')}</span>
+      <b>${esc(g.name)}</b><span class="stn">${esc(t('nBooks2').replace('%n',g.bs.length))}</span></button>`}).join('')+'</div>';
+  if(one.length)h+=`<h2 class="sec">${esc(t('auOne'))}</h2><div class="aulist">`+one.map(g=>{const b=g.bs[0];
+    return `<button class="aurow" data-go="b-${esc(b.id)}"><b>${esc(g.name)}</b><span>${esc(bTitle(b))}</span></button>`}).join('')+'</div>';
+  return h;
+}
 function coverCards(list){return list.map(b=>{const {total,done}=bookState(b);const pc=total?Math.round(done/total*100):0;
     return `<button class="cover" data-go="b-${esc(b.id)}" aria-label="${esc(bTitle(b))}">${coverCard(b)}<span class="cvm"><i style="width:${pc}%"></i></span></button>`}).join('')}
 function listCards(list){
@@ -194,7 +221,7 @@ function listCards(list){
       <div class="meta2"><span class="st st-${st}">${ST_LABEL[st]}</span>${(b.tags||[]).map(x=>`<span class="tg">${esc(tagName(x))}</span>`).join('')}<span class="cnt">${EN()&&enN<(b.guided||[]).length?`<span class="enn">${enN?enN+' EN · ':'中文 · '}</span>`:''}${done}/${total}</span></div>
       <div class="meter"><i style="width:${total?Math.round(done/total*100):0}%"></i></div></div></button>`}).join('');
 }
-function saveF(){ls('bandu-filter',JSON.stringify({tag:S.f.tag,lang:S.f.lang,st:S.f.st,view:S.f.view}))}
+function saveF(){ls('bandu-filter',JSON.stringify({tag:S.f.tag,au:S.f.au,lang:S.f.lang,st:S.f.st,view:S.f.view}))}
 const COVERS=['#2D6A51','#7A4B2E','#35557A','#6B4C7A','#8A6A1E','#3F6B6B','#7A3B45','#4B5B3A'];
 function coverColor(b){const tags=S.tags.length?S.tags:[];const i=tags.indexOf((b.tags||[])[0]);let h=0;for(const ch of b.id)h=(h*31+ch.charCodeAt(0))>>>0;return COVERS[h%COVERS.length]}
 function chip(attr,val,label,on){return `<button class="chip" data-${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`}
@@ -217,7 +244,7 @@ function viewShelf(){
       <div class="chips"${f.view==='cat'?' hidden':''}>${chip('ftag','',t('all'),!f.tag)}${tags.map(x=>chip('ftag',x,tagName(x),f.tag===x)).join('')}</div>
       <div class="chips">${chip('fst','reading',t('reading'),f.st==='reading')}${chip('fst','liked',t('likedF'),f.st==='liked')}${chip('fst','done',t('done'),f.st==='done')}${chip('fst','new',t('fresh'),f.st==='new')}<span class="sep"></span>${chip('flang','zh',t('zhBooks'),f.lang==='zh')}${chip('flang','en',t('enBooks'),f.lang==='en')}${S.books.some(b=>b.lang==='nl')?chip('flang','nl',t('nlBooks'),f.lang==='nl'):''}${S.books.some(b=>b.lang==='es')?chip('flang','es',t('esBooks'),f.lang==='es'):''}</div></div>`;
     const V=S.f.view||'grid';
-    h+=`<div class="shelfbar"><span>${esc(t('nBooks').replace('%n',S.books.length))}</span><span class="seg">${[['grid',t('vGrid')],['list',t('vList')],['cat',t('cats')]].map(([v,l])=>`<button data-view="${v}" aria-pressed="${V===v}">${esc(l)}</button>`).join('')}</span></div>`;
+    h+=`<div class="shelfbar"><span>${esc(t('nBooks').replace('%n',S.books.length))}</span><span class="seg">${[['grid',t('vGrid')],['list',t('vList')],['cat',t('cats')],['author',t('vAuthor')]].map(([v,l])=>`<button data-view="${v}" aria-pressed="${V===v}">${esc(l)}</button>`).join('')}</span></div>`;
     h+=`<div id="booklist">${shelfList()}</div>`;
   }
   const likeCount=Object.keys(S.prog.liked||{}).length;
@@ -231,7 +258,7 @@ function viewBook(bid){
   ensureChapters(bid);
   const chs=chOf(bid);
   const intro=EN()?(enB(b).intro||b.intro):b.intro;
-  let h=bar('home',t('shelf'),bTitle(b),langBtn())+`<div class="view bookhead"><div class="eyebrow">${esc(bAuthor(b))}${b.year?' · '+esc(b.year):''}</div><h1>${esc(bTitle(b))}</h1><div class="${EN()?'zhsub':'en'}">${esc(bSub(b))}</div>`;
+  let h=bar('home',t('shelf'),bTitle(b),langBtn())+`<div class="view bookhead"><div class="eyebrow">${S.books.filter(x=>auKey(x)===auKey(b)).length>1?`<button class="aulink" data-au="${esc(auKey(b))}">${esc(bAuthor(b))} ›</button>`:esc(bAuthor(b))}${b.year?' · '+esc(b.year):''}</div><h1>${esc(bTitle(b))}</h1><div class="${EN()?'zhsub':'en'}">${esc(bSub(b))}</div>`;
   if(EN()&&!enB(b).intro)h+=`<p class="untrans">${esc(t('untrans'))}</p>`;
   if(intro)h+=`<div class="md" style="margin-top:12px">${md(intro)}</div>`;
   const rcid=(S.prog.recent[b.id]||{}).cid,rc=rcid&&findCh(rcid);
@@ -481,8 +508,11 @@ app.addEventListener('click',async e=>{
   if(t.dataset.size){const n=Math.min(26,Math.max(14,+(ls('rsize')||18)+(+t.dataset.size)*2));ls('rsize',String(n));const r=document.getElementById('reader');if(r)r.style.setProperty('--rs',n+'px');return}
   if(t.dataset.tocpick!==undefined){const c=findCh(t.dataset.cid);const b=c&&S.epubs[c.bookId];if(b)await showHref(b,+t.dataset.tocpick,document.getElementById('reader'));return}
   for(const [k,a] of [['tag','ftag'],['lang','flang'],['st','fst']])if(t.dataset[a]!==undefined){const v=t.dataset[a];S.f[k]=(k!=='tag'&&S.f[k]===v)?'':v;saveF();render();return}
-  if(t.dataset.view){S.f.view=t.dataset.view;if(S.f.view==='cat')S.f.tag='';saveF();render();return}
+  if(t.dataset.view){S.f.view=t.dataset.view;if(S.f.view==='cat')S.f.tag='';if(S.f.view==='author')S.f.au='';saveF();render();return}
   if(t.dataset.cat!==undefined){S.f.tag=t.dataset.cat;saveF();render();const l=document.getElementById('booklist');if(l)l.scrollIntoView({block:'start'});return}
+  if(t.dataset.au!==undefined){S.f.au=t.dataset.au;if(S.f.au)S.f.view='author';saveF();
+    const onShelf=!location.hash||location.hash==='#';if(onShelf)render();else go('home');
+    if(S.f.au){const l=document.getElementById('booklist');if(l)l.scrollIntoView({block:'start'})}return}
   if(t.dataset.backup!==undefined){backup();return}
   if(t.dataset.restore!==undefined){document.getElementById('restorefile').click();return}
   if(t.dataset.tipoff!==undefined){ls('bandu-tip','off');render();return}
